@@ -32,7 +32,7 @@ CONFIG = {
     "cert_file" : "pki/mycert.pem",
     "xmlsec_binary" : "/opt/local/bin/xmlsec1",
     "metadata" : {
-        "local": ["sp/sp.xml"],
+        "local": ["metadata.xml"],
     },
     "organization": {
         "display_name": "Rolands Social proxy",
