@@ -66,7 +66,6 @@ SERVICE = {
         "token_endpoint": 'http://api.twitter.com/oauth/access_token',
         "authorization_endpoint": 'http://api.twitter.com/oauth/authorize',
         "class":Twitter,
-        "variable": "",
         "attribute_map": {
             "eduPersonPrincipalName": ("%s@twitter.com", "screen_name"),
             "displayName": "screen_name",
@@ -84,7 +83,6 @@ SERVICE = {
         "token_endpoint": "https://accounts.google.com/o/oauth2/token",
         "verification_endpoint": "https://www.googleapis.com/oauth2/v1/tokeninfo",
         "userinfo_endpoint": "https://www.googleapis.com/oauth2/v1/userinfo",
-        #"userinfo_endpoint": "https://accounts.google.com/o/oauth2/userinfo",
         "scope": ["https://www.googleapis.com/auth/userinfo.profile",
                   "https://www.googleapis.com/auth/userinfo.email"],
         "attribute_map": {
@@ -101,7 +99,7 @@ SERVICE = {
         "logo": "logo/google_sm.gif",
         "logo_type": "image/gif"
     },
-    "fallthrough":{
+    "fallthrough":{ # Just for testing
         "saml_endpoint":"fallthrough_sso",
         "social_endpoint":"fallthrough",
         "class":FallTrough,
