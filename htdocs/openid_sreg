@@ -1,0 +1,33 @@
+<%def name="render(sreg_data)">
+    % if not sreg_data:
+        <div class="alert">No registration data was returned</div>
+    % else:
+    <%
+        sreg_list = sreg_data.items()
+        sreg_list.sort()
+    %>
+        <h2>Registration Data</h2>
+        <table class="sreg">
+        <thead><tr><th>Field</th><th>Value</th></tr></thead>
+        <tbody>
+
+    <%
+        odd = ' class="odd"'
+    %>
+        % for k, v in sreg_list:
+        <%
+            #field_name = sreg.data_fields.get(k, k)
+            field_name = k
+            value = cgi.escape(v.encode('UTF-8'))
+        %>
+            <tr${odd}><td>${field_name}</td><td>${value}</td></tr>
+        <%
+            if odd:
+                odd = ''
+            else:
+                odd = ' class="odd"'
+        %>
+        %endfor
+        </tbody></table>
+    %endif
+</%def>

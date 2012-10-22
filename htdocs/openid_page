@@ -1,0 +1,64 @@
+<%def name="header(title)">
+      <head><title>${title}</title></head>
+      <style type="text/css">
+          * {
+            font-family: verdana,sans-serif;
+          }
+          body {
+            width: 50em;
+            margin: 1em;
+          }
+          div {
+            padding: .5em;
+          }
+          tr.odd td {
+            background-color: #dddddd;
+          }
+          table.sreg {
+            border: 1px solid black;
+            border-collapse: collapse;
+          }
+          table.sreg th {
+            border-bottom: 1px solid black;
+          }
+          table.sreg td, table.sreg th {
+            padding: 0.5em;
+            text-align: left;
+          }
+          table {
+            margin: 0;
+            padding: 0;
+          }
+          .alert {
+            border: 1px solid #e7dc2b;
+            background: #fff888;
+          }
+          .error {
+            border: 1px solid #ff0000;
+            background: #ffaaaa;
+          }
+          #verify-form {
+            border: 1px solid #777777;
+            background: #dddddd;
+            margin-top: 1em;
+            padding-bottom: 0em;
+          }
+      </style>
+      <body>
+        <h1>${title}</h1>
+        <p>Enter your OpenID identifier</p>
+</%def>
+
+<%def name="footer(action, value, session_id)">
+    <div id="verify-form">
+      <form method="get" accept-charset="UTF-8" action=${action}>
+        OpenID URL:
+        <input type="text" name="openid_identifier" value=${value} size="60"/>
+        %if session_id:
+            <input type="hidden" name="sessionid" value=${session_id} size="60"/>
+        %endif
+        <input type="submit" value="Verify" /><br />
+      </form>
+    </div>
+  </body>
+</%def>

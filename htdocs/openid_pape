@@ -1,0 +1,18 @@
+<%def name="render(data)">
+    % if not pape_data:
+        <div class="alert">No PAPE data was returned</div>
+    % else:
+        <div class="alert">Effective Auth Policies<ul>
+
+        % for policy_uri in pape_data.auth_policies:
+            <li><tt>${policy_uri}</tt></li>
+        %endfor
+        
+        % if not pape_data.auth_policies:
+            <li>No policies were applied.</li>
+        %endif
+        
+        </ul></div>
+      % endif
+</%def>
+

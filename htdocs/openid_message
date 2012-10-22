@@ -1,0 +1,29 @@
+## -*- coding: utf-8 -*-
+
+<%inherit file="openid.html"/>
+
+<%namespace name="pape" file="openid_pape"/>
+<%namespace name="sreg" file="openid_sreg"/>
+<%namespace name="page" file="openid_page"/>
+
+<%def name="render_message(message, css_class)">
+    <div class='${css_class}'>
+    ${message}
+    </div>
+</%def>
+
+${page.header(title)}
+
+%if message:
+  ${render_message(message, css_class)}
+%endif
+  
+%if pape_data:
+  ${pape.render(pape_data)}
+%endif
+
+%if sreg_data:
+  ${sreg.render(sreg_data)}
+%endif
+
+${page.footer(action, value, session_id)}
