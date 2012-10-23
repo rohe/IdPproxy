@@ -18,6 +18,14 @@ The configuration is written as a python module.
 The third configuration file is the secrets file, more about that here
 :ref:`secrets` .
 
+You also have to make the metadata file for the service. For this you
+should use the mm.py script like this::
+
+    ./mm.py idp_conf > idp.xml
+
+The resulting file is the metadata file that should be distributed to the
+SPs that may use the services.
+
 Configuration directives
 ::::::::::::::::::::::::
 
