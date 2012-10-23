@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import argparse
 from saml2.sigver import read_cert_from_file
 from saml2.time_util import in_a_while
 
@@ -35,7 +36,7 @@ def entity_desc(loc, key_descriptor=None, eid=None, validity=None, cache=None,
 
     return ei
 
-def entities_desc(service, name, base, cert_file=None, validity="", cache=""):
+def entities_desc(service, ename, base, cert_file=None, validity="", cache=""):
     ed = []
     if cert_file:
         _cert = read_cert_from_file(cert_file, "pem")
@@ -49,19 +50,22 @@ def entities_desc(service, name, base, cert_file=None, validity="", cache=""):
         ed.append(entity_desc(loc, key_descriptor, eid))
 
 
-    return EntitiesDescriptor(name=name, entity_descriptor=ed,
+    return EntitiesDescriptor(name=ename, entity_descriptor=ed,
                               valid_until = in_a_while(hours=validity),
                               cache_duration=cache)
 
 if __name__ == "__main__":
+    import sys
+
     from config import idp_proxy_conf as ipc
+    cnf = __import__(sys.argv[1])
 
-    base = "%s://%s:%d" % (ipc.PROTOCOL, ipc.HOST_NAME, ipc.PORT)
+    if cnf.BASE.endswith("/"):
+        _base = cnf.BASE[:-1]
+    else:
+        _base = cnf.BASE[:]
 
-    ed = entities_desc(ipc.SERVICE,
-                       "%s/md/idpproxy-1.0.xml" % base,
-                       base,
-                       cert_file=ipc.CERT_FILE,
-                       validity=1)
+    ed = entities_desc(ipc.SERVICE, "%s/md/idpproxy-1.0.xml" % _base,
+                       _base, cert_file=cnf.CONFIG["cert_file"], validity=1)
 
     print ed
