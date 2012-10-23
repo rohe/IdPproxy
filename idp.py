@@ -137,8 +137,7 @@ from jwkest.jwk import rsa_load
 
 __author__ = 'rohe0002'
 
-from saml2 import metadata, extension_elements_to_elements
-from saml2 import attribute_converter
+from saml2 import extension_elements_to_elements
 from saml2.extension import mdattr, idpdisc
 from saml2.extension.mdattr import EntityAttributes
 
@@ -166,10 +165,6 @@ def customer_info(metad, dkeys):
 
 # ----------------------------------------------------------------------------
 
-#from openid import oidutil
-from openid.store import memstore
-from openid.store import filestore
-
 SERVER_ENV = {}
 
 from mako.lookup import TemplateLookup
@@ -187,13 +182,6 @@ def setup_server_env(proxy_conf, conf_mod, key):
 
     SERVER_ENV["sessions"] = {}
 
-
-    # The OpenID library demands this
-    if proxy_conf.DATA_PATH:
-        SERVER_ENV["store"] = filestore.FileOpenIDStore(proxy_conf.DATA_PATH)
-    else:
-        SERVER_ENV["store"] = memstore.MemoryStore()
-
     SERVER_ENV["eptid"] = eptid.Eptid(proxy_conf.EPTID_DB, proxy_conf.SECRET)
 
     _idp = server.Server(conf_mod)
@@ -203,7 +191,6 @@ def setup_server_env(proxy_conf, conf_mod, key):
     # add the service endpoints
     part = urlparse.urlparse(_idp.conf.entityid)
     base = "%s://%s/" % (part.scheme, part.netloc)
-    #base = _idp.conf.entityid[:-len("idp")]
 
     SERVER_ENV["service"] = proxy_conf.SERVICE
     endpoints = {"single_sign_on_service": [], "single_logout_service": []}
@@ -218,18 +205,9 @@ def setup_server_env(proxy_conf, conf_mod, key):
     SERVER_ENV["idp"] = _idp
     SERVER_ENV["template_lookup"] = LOOKUP
     SERVER_ENV["sid_generator"] = session_nr()
-
-    #SERVER_ENV["ID_and_SECRET"] = proxy_conf.ID_and_SECRET
-    SERVER_ENV["PORT"] = proxy_conf.PORT
     SERVER_ENV["STATIC_DIR"] = proxy_conf.STATIC_DIR
-
-    _hostname = proxy_conf.HOST_NAME
-
-    if SERVER_ENV["PORT"]:
-        SERVER_ENV["base_url"] = "http://%s:%s/" % (_hostname,
-                                                    SERVER_ENV["PORT"])
-    else:
-        SERVER_ENV["base_url"] = "http://%s/" % (_hostname,)
+    SERVER_ENV["base_url"] = base
+    SERVER_ENV["SIGN"] = proxy_conf.SIGN
 
     #print SERVER_ENV
     if proxy_conf.CACHE == "memory":

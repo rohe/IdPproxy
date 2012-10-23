@@ -6,14 +6,6 @@ from idpproxy.social.twitter import Twitter
 from idpproxy.social.liveid import LiveIDOAuth2
 from idpproxy.social.openidconnect import OpenIDConnect
 
-PORT = 8091
-PROTOCOL = "http"
-
-# The hostname of the service
-#HOST_NAME = "localhost"
-HOST_NAME = 'lingon.ladok.umu.se'
-#HOST_NAME = 'lingon.catalogix.se'
-
 # The name of the service, is used in the cache and in the cookies returned
 SERVER_NAME = "idpproxy"
     
@@ -24,18 +16,12 @@ CACHE = "memory"
 # Name of the eduPersonTargetedID database
 EPTID_DB = "eptid.db"
 
-# If the openid library should store information in a more persistent way
-# this must be a file name. If not define in-memory storage is used.
-DATA_PATH = ""
-
 # debugging or not
 DEBUG=True
 
 STATIC_DIR = "static/"
 SECRET = "hemlig_text"
 SIGN = True
-
-CERT_FILE = "pki/mycert.pem"
 
 # SAML endpoint, Social protocol endpoint, protocol handler class
 SERVICE = {
@@ -55,8 +41,6 @@ SERVICE = {
             "uid": "link",
         },
         "name": "Facebook",
-        "logo":"logo/facebook_logo.jpg",
-        "logo_type":"image/jpg"
     },
     "twitter":{
         "saml_endpoint":"twitter_sso",
@@ -72,8 +56,6 @@ SERVICE = {
             "uid": "user_id",
             },
         "name": "Twitter",
-        "logo": "logo/twitter_logo_header.png",
-        "logo_type": "image/png"
     },
     "google": {
         "saml_endpoint":"google_sso",
@@ -94,10 +76,7 @@ SERVICE = {
             "surname": "family_name",
         },
         "class":GoogleOIC,
-        "variable": "",
         "name": "Google",
-        "logo": "logo/google_sm.gif",
-        "logo_type": "image/gif"
     },
     "fallthrough":{ # Just for testing
         "saml_endpoint":"fallthrough_sso",
