@@ -33,7 +33,7 @@ SERVICE = {
         "token_endpoint": "https://graph.facebook.com/oauth/access_token",
         "authorization_endpoint": 'https://graph.facebook.com/oauth/authorize',
         "userinfo_endpoint": "https://graph.facebook.com/me",
-        "permissions": ["email"],
+        "scope": ["email"],
         "attribute_map": {
             "givenName": "first_name",
             "surName": "last_name",
@@ -112,7 +112,7 @@ SERVICE = {
         "authorization_endpoint": 'https://login.live.com/oauth20_authorize.srf',
         "userinfo_endpoint": "https://apis.live.net/v5.0/me",
         "name": "LiveID",
-        "permissions": ["wl.basic"],
+        "scope": ["wl.basic"],
         "attribute_map": {
             "uid": "id",
             #"email": "email",
