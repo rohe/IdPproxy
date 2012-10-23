@@ -12,8 +12,11 @@ Welcome to IdPproxy's documentation!
 Contents:
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
+   install
+   config
+   secrets
 
 Indices and tables
 ==================

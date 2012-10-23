@@ -3,17 +3,20 @@
 Configure IdPproxy
 ==================
 
-There are two basic configuration files. One that configures
+There are three basic configuration files. One that configures
 the IdPproxy as a SAML2 IdP. An example of that configuration can be found in
 *idp.conf*. How you write this configuration can be found in the
 **pysaml2** documentation.
 
-The other configuration file then deals with the IdPproxy as a proxy.
+The second configuration file then deals with the IdPproxy as a proxy.
 It contains all the necessary directives on how to talk to the
 social services you want the proxy to work against.
 
 Below you will find a list of all the used directives in alphabetic order.
 The configuration is written as a python module.
+
+The third configuration file is the secrets file, more about that here
+:ref:`secrets` .
 
 Configuration directives
 ::::::::::::::::::::::::
@@ -141,7 +144,7 @@ saml_endpoint
 ^^^^^^^^^^^^^
 
 The endpoint the SAML2 authentication request is received on.
-Here only the postfix is specified the whole URL is constructed based
+Here only the postfix is specified. The whole URL is constructed based
 on the BASE specification in the idp configuration file.
 
 scope
@@ -154,7 +157,7 @@ social_endpoint
 
 The endpoint that the social service redirects the user to once the
 authentication/authorization is done. Again as with saml_endpoint only
-the postfix are needed.
+the postfix is needed.
 
 srv_discovery_url
 ^^^^^^^^^^^^^^^^^
