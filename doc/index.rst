@@ -6,11 +6,13 @@
 Welcome to IdPproxy's documentation!
 ====================================
 
+:Release: |release|
+:Date: |today|
+
 Contents:
 
 .. toctree::
    :maxdepth: 2
-
 
 
 Indices and tables
