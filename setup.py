@@ -18,7 +18,6 @@ setup(
         install_requires=[
                 'pysaml2',
                 'mako',
-                'python-openid',
                 'pycrypto',
                 'oic',
         ],
