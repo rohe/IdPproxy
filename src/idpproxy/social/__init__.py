@@ -1,9 +1,12 @@
 #
-import idpproxy
 
 from saml2 import samlp
 
 import logging
+from idpproxy import exception_log
+from idpproxy import err_response
+from idpproxy import do_req_response
+
 logger = logging.getLogger(__name__)
 
 class Social(object):
@@ -54,9 +57,8 @@ class Social(object):
                 pass
 
         except Exception, exc:
-            idpproxy.exception_log()
-            (stat, headers, content) = idpproxy.err_response(server_env,
-                                                             req_info, exc)
+            exception_log()
+            (stat, headers, content) = err_response(server_env, req_info, exc)
             start_response(stat, headers)
             return content
 
@@ -71,11 +73,10 @@ class Social(object):
                     auth_auth = session["authn_auth"]
                 #(server_env, req_info, response, _environ, source,
                 #session, service="")
-                (stat, headers, content) = idpproxy.do_req_response(
-                                                server_env, req_info,
-                                                identity, environ,
-                                                auth_auth,
-                                                session, _service)
+                (stat, headers, content) = do_req_response(server_env,
+                                                           req_info, identity,
+                                                           environ, auth_auth,
+                                                           session, _service)
                 headers.append(cookie)
                 if _debug:
                     logger.debug("[do_%s] return headers: %s" % (_service,
@@ -83,9 +84,8 @@ class Social(object):
             else:
                 session["authentication"] = "FAILED"
                 error_info = (samlp.STATUS_AUTHN_FAILED , identity)
-                (stat, headers, content) = idpproxy.err_response(server_env,
-                                                                 req_info,
-                                                                 error_info)
+                (stat, headers, content) = err_response(server_env, req_info,
+                                                        error_info)
 
                 headers.append(cookie)
             start_response(stat, headers)

@@ -6,10 +6,6 @@ import argparse
 import idpproxy
 from idpproxy import idp_srv
 
-#USAGE = "single"
-
-#from urlparse import parse_qs
-
 from saml2 import server
 from saml2 import BINDING_HTTP_REDIRECT
 

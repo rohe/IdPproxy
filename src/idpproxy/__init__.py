@@ -17,7 +17,6 @@ from saml2 import BINDING_HTTP_REDIRECT, BINDING_SOAP, BINDING_HTTP_POST
 from saml2.s_utils import UnknownPrincipal
 from saml2.s_utils import UnsupportedBinding
 
-
 logger = logging.getLogger(__name__)
 
 # ----------------------------------------------------------------------------

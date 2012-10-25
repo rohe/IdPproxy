@@ -2,7 +2,9 @@
 
 __author__ = 'rolandh'
 
-import idpproxy
+from idpproxy import exception_log
+from idpproxy import bad_request
+from idpproxy import relay_state
 from urlparse import parse_qs
 
 from config.secrets import CONSUMER
@@ -118,15 +120,15 @@ def auth_choice(path, environ, start_response, sid, server_env):
                 req_info = server_env["idp"].parse_authn_request(
                                                     query["SAMLRequest"][0])
             except KeyError:
-                idpproxy.exception_log()
-                return idpproxy.bad_request(start_response,
+                exception_log()
+                return bad_request(start_response,
                                             "Expected SAML request")
             except Exception, exc:
-                idpproxy.exception_log()
-                return idpproxy.bad_request(start_response,
+                exception_log()
+                return bad_request(start_response,
                                             "Faulty SAML request: %s" % exc)
 
-            req_info["relay_state"] = idpproxy.relay_state(query)
+            req_info["relay_state"] = relay_state(query)
 
             entity_id = req_info["sp_entity_id"]
             logger.debug("REQ_INFO: %s" % req_info)
@@ -162,6 +164,6 @@ def logo(environ, start_response, serv_env):
                                    serv_env["LOGO_TYPE"][name[7:]])])
         return [pict]
     except IOError:
-        return idpproxy.not_found(environ, start_response)
+        return not_found(environ, start_response)
 
 # ----------------------------------------------------------------------------
