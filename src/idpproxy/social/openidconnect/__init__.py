@@ -40,6 +40,7 @@ class OpenIDConnect(Social):
         self.flow_type = FLOW_TYPE
         self.access_token_response = AccessTokenResponse
         self.client_cls = oic.Client
+        self.authn_method = None
 
     def dynamic(self, server_env, callback, session):
         try:
@@ -137,6 +138,7 @@ class OpenIDConnect(Social):
             cis = client.construct_AuthorizationRequest(
                                                     request_args=request_args)
             logger.debug("request: %s" % cis)
+
             url, body, ht_args, cis = client.uri_and_body(AuthorizationRequest,
                                                     cis, method="GET",
                                                     request_args=request_args)
@@ -168,6 +170,9 @@ class OpenIDConnect(Social):
             logger.debug("key: %s" % key)
         else:
             kwargs = {}
+
+        if self.authn_method:
+            kwargs["authn_method"] = self.authn_method
 
         # get the access token
         return client.do_access_token_request(state=authresp["state"],
