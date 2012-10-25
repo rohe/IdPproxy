@@ -6,7 +6,7 @@ from idpproxy.social.twitter import Twitter
 from idpproxy.social.liveid import LiveIDOAuth2
 from idpproxy.social.openidconnect import OpenIDConnect
 from idpproxy.social.paypal import PayPal
-from idpproxy.social.twitter import LinkedIn
+from idpproxy.social.linkedin import LinkedIn
 
 # The name of the service, is used in the cache and in the cookies returned
 
@@ -143,7 +143,7 @@ SERVICE = {
         "authorization_endpoint": 'https//www.linkedin.com/uas/oauth/authenticate',
         "class":LinkedIn,
         "attribute_map": {
-            "eduPersonPrincipalName": ("%s@twitter.com", "screen_name"),
+            "eduPersonPrincipalName": ("%s@linkedin.com", "user_id"),
             "displayName": "screen_name",
             "uid": "user_id",
             },
@@ -152,23 +152,19 @@ SERVICE = {
     "paypal": {
         "saml_endpoint":"paypal_sso",
         "social_endpoint":"paypal",
-        "authenticating_authority": "https://www.google.com/accounts/o8/id", # No completely true but ..
-        "authorization_endpoint": "https://accounts.google.com/o/oauth2/auth",
-        "token_endpoint": "https://accounts.google.com/o/oauth2/token",
-        "verification_endpoint": "https://www.googleapis.com/oauth2/v1/tokeninfo",
-        "userinfo_endpoint": "https://www.googleapis.com/oauth2/v1/userinfo",
-        "scope": ["https://www.googleapis.com/auth/userinfo.profile",
-                  "https://www.googleapis.com/auth/userinfo.email"],
+        "authenticating_authority": "https://www.paypal.com/webapps/auth/protocol/openidconnect/v1",
+        "authorization_endpoint": "https://www.paypal.com/webapps/auth/protocol/openidconnect/v1/authorize",
+        "token_endpoint": "https://www.paypal.com/webapps/auth/protocol/openidconnect/v1/tokenservice",
+        "userinfo_endpoint": "https://www.paypal.com/webapps/auth/protocol/openidconnect/v1/userinfo",
+        "scope": ["openid", "profile", "email"],
         "attribute_map": {
-            "uid": "id",
+            "uid": "uid",
             "email": "email",
             #"verified_email": true,
-            "displayName": "name",
-            "givenName": "given_name",
-            "surname": "family_name",
+            "displayName": "full_name",
             },
         "class":PayPal,
-        "name": "Google",
+        "name": "Paypal",
         },
 
     }
