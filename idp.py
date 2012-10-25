@@ -71,6 +71,8 @@ def application(environ, start_response):
                                     { 'sid' : _sid,
                                       "remote": environ["REMOTE_HOST"]})
 
+    # to avoid getting to duplicated entries
+    _logger.propagate = False
     _logger.info( "%s %s" % (environ.get("REQUEST_METHOD", ''), path))
     
     kaka = environ.get("HTTP_COOKIE", '')
@@ -85,17 +87,6 @@ def application(environ, start_response):
         sid = _cache.sid()
 
     _logger.debug("SID: %s" % sid)
-#    if state.any_active():
-#        _logger.debug("#State#: %s" % (state,))
-#
-#        if path == "/logout":
-#            return idpproxy.redirect_logout(environ, start_response,
-#                                            SERVER_ENV, state)
-#        elif idpproxy.login_attempt(environ):
-#            return idpproxy.return_active_info(environ, start_response,
-#                                               SERVER_ENV, state)
-#    else:
-#        _logger.debug("INACTIVE state")
 
     if idpproxy.static_file(SERVER_ENV, path):
         return idpproxy.static(environ, start_response,
@@ -121,21 +112,13 @@ def application(environ, start_response):
         return idp_srv.auth_choice(path, environ, start_response, sid,
                                    SERVER_ENV)
 
-    #return idpproxy.not_found(environ, start_response, _logger)
-
 # ----------------------------------------------------------------------------
+__author__ = 'rohe0002'
 
-# from repoze.who.config import make_middleware_with_config
-# 
-# APP_WITH_AUTH = make_middleware_with_config(application, {"here":"."}, 
-#                         './who.ini', log_file="app.log")
-
-# ----------------------------------------------------------------------------
 import json
+
 from jwkest.jwe import decrypt
 from jwkest.jwk import rsa_load
-
-__author__ = 'rohe0002'
 
 from saml2 import extension_elements_to_elements
 from saml2.extension import mdattr, idpdisc
@@ -160,7 +143,8 @@ def customer_info(metad, dkeys):
                     for attr in elem.attribute:
                         if attr.name == "http://swamid.sunet.se/customer":
                             for val in attr.attribute_value:
-                                res[ent] = json.loads(decrypt(val.text, dkeys, "private"))
+                                res[ent] = json.loads(decrypt(val.text, dkeys,
+                                                              "private"))
     return res
 
 # ----------------------------------------------------------------------------
@@ -187,12 +171,12 @@ def setup_server_env(proxy_conf, conf_mod, key):
     _idp = server.Server(conf_mod)
 
     SERVER_ENV["CUSTOMER_INFO"] = customer_info(_idp.metadata, {"rsa": [key]})
+    SERVER_ENV["service"] = proxy_conf.SERVICE
 
     # add the service endpoints
     part = urlparse.urlparse(_idp.conf.entityid)
     base = "%s://%s/" % (part.scheme, part.netloc)
 
-    SERVER_ENV["service"] = proxy_conf.SERVICE
     endpoints = {"single_sign_on_service": [], "single_logout_service": []}
     for key, _dict in proxy_conf.SERVICE.items():
         _sso = _dict["saml_endpoint"]
@@ -205,8 +189,8 @@ def setup_server_env(proxy_conf, conf_mod, key):
     SERVER_ENV["idp"] = _idp
     SERVER_ENV["template_lookup"] = LOOKUP
     SERVER_ENV["sid_generator"] = session_nr()
-    SERVER_ENV["STATIC_DIR"] = proxy_conf.STATIC_DIR
     SERVER_ENV["base_url"] = base
+    SERVER_ENV["STATIC_DIR"] = proxy_conf.STATIC_DIR
     SERVER_ENV["SIGN"] = proxy_conf.SIGN
 
     #print SERVER_ENV
@@ -235,16 +219,6 @@ if __name__ == '__main__':
     from cherrypy.wsgiserver import ssl_pyopenssl
 
     from config import idp_proxy_conf
-
-#    CURLS = URLS
-#    for _sso in idp_proxy_conf.MAP.keys():
-#        CURLS.extend(single.SOC_URLS[_sso])
-    #print CURLS
-
-    try:
-        _port = idp_proxy_conf.PORT
-    except AttributeError:
-        _port = 0
 
     _parser = argparse.ArgumentParser()
     _parser.add_argument('-p', dest='port', default=8089, type=int,
