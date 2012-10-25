@@ -5,8 +5,11 @@ from idpproxy.social.google import GoogleOIC
 from idpproxy.social.twitter import Twitter
 from idpproxy.social.liveid import LiveIDOAuth2
 from idpproxy.social.openidconnect import OpenIDConnect
+from idpproxy.social.paypal import PayPal
+from idpproxy.social.twitter import LinkedIn
 
 # The name of the service, is used in the cache and in the cookies returned
+
 SERVER_NAME = "idpproxy"
     
 CACHE = "memory"
@@ -22,6 +25,15 @@ DEBUG=True
 STATIC_DIR = "static/"
 SECRET = "hemlig_text"
 SIGN = True
+
+# ------- HTTPS -------
+# These should point to relevant files
+SERVER_CERT= ""
+SERVER_KEY=""
+# This is of course the certificate chain for the CA that signed
+# you cert and all the way up to the top
+CERT_CHAIN=""
+# ------- HTTPS -------
 
 # SAML endpoint, Social protocol endpoint, protocol handler class
 SERVICE = {
@@ -121,5 +133,42 @@ SERVICE = {
             "givenName": "first_name",
             "surname": "last_name",
             },
+    },
+    "linkedin":{
+        "saml_endpoint":"linkedin_sso",
+        "social_endpoint":"linkedin",
+        "authenticating_authority": 'http://api.linkedin.com/oauth/',
+        "request_token_url": 'https://api.linkedin.com/uas/oauth/requestToken',
+        #"token_endpoint": 'https://api.linkedin.com/uas/oauth/requestToken',
+        "authorization_endpoint": 'https//www.linkedin.com/uas/oauth/authenticate',
+        "class":LinkedIn,
+        "attribute_map": {
+            "eduPersonPrincipalName": ("%s@twitter.com", "screen_name"),
+            "displayName": "screen_name",
+            "uid": "user_id",
+            },
+        "name": "LinkedIn",
+        },
+    "paypal": {
+        "saml_endpoint":"paypal_sso",
+        "social_endpoint":"paypal",
+        "authenticating_authority": "https://www.google.com/accounts/o8/id", # No completely true but ..
+        "authorization_endpoint": "https://accounts.google.com/o/oauth2/auth",
+        "token_endpoint": "https://accounts.google.com/o/oauth2/token",
+        "verification_endpoint": "https://www.googleapis.com/oauth2/v1/tokeninfo",
+        "userinfo_endpoint": "https://www.googleapis.com/oauth2/v1/userinfo",
+        "scope": ["https://www.googleapis.com/auth/userinfo.profile",
+                  "https://www.googleapis.com/auth/userinfo.email"],
+        "attribute_map": {
+            "uid": "id",
+            "email": "email",
+            #"verified_email": true,
+            "displayName": "name",
+            "givenName": "given_name",
+            "surname": "family_name",
+            },
+        "class":PayPal,
+        "name": "Google",
+        },
+
     }
-}

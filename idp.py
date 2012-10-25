@@ -230,7 +230,10 @@ def usage():
 if __name__ == '__main__':
     import sys
 
-    from wsgiref.simple_server import make_server
+    #from wsgiref.simple_server import make_server
+    from cherrypy import wsgiserver
+    from cherrypy.wsgiserver import ssl_pyopenssl
+
     from config import idp_proxy_conf
 
 #    CURLS = URLS
@@ -266,8 +269,17 @@ if __name__ == '__main__':
     _idp = setup_server_env(idp_proxy_conf, args.config, key)
 
     print SERVER_ENV["base_url"]
-    SRV = make_server(idp_proxy_conf.HOST_NAME, args.port, application)
+    SRV = wsgiserver.CherryPyWSGIServer(('0.0.0.0', args.port), application)
+
+    SRV.ssl_adapter = ssl_pyopenssl.pyOpenSSLAdapter(idp_proxy_conf.SERVER_CERT,
+                                                     idp_proxy_conf.SERVER_KEY,
+                                                     idp_proxy_conf.CERT_CHAIN)
+
+    #SRV = make_server(idp_proxy_conf.HOST_NAME, args.port, application)
     print "listening on port: %s" % args.port
     logger.info("Server up and running!")
-    
-    SRV.serve_forever()
+
+    try:
+        SRV.start()
+    except KeyboardInterrupt:
+        SRV.stop()
