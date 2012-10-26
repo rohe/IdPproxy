@@ -92,7 +92,7 @@ class OAuth2(Social):
         profile = json.loads(result.text)
 
         logger.info("PROFILE: %s" % (profile, ))
-        session["service"] = self.extra["name"]
+        session["service"] = self.name
         session["authentication"] = "OK"
         session["status"] = "SUCCESS"
         session["authn_auth"] = self.authenticating_authority

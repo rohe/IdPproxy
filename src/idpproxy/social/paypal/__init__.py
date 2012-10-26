@@ -6,3 +6,4 @@ class PayPal(OpenIDConnect):
     def __init__(self, client_id, client_secret, **kwargs):
         OpenIDConnect.__init__(self, client_id, client_secret, **kwargs)
         self.authn_method = "client_secret_basic"
+        self.use_nonce = True

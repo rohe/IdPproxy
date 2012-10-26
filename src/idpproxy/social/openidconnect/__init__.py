@@ -109,9 +109,9 @@ class OpenIDConnect(Social):
             client = self.static(server_env, callback, session)
 
         try:
-            server_env["OIC_CLIENT"][self.extra["name"]] = client
+            server_env["OIC_CLIENT"][self.name] = client
         except KeyError:
-            server_env["OIC_CLIENT"]= {self.extra["name"]: client}
+            server_env["OIC_CLIENT"]= {self.name: client}
 
 
         logger.debug("Session: %s" % session)
@@ -128,6 +128,12 @@ class OpenIDConnect(Social):
         if self.flow_type == "token":
             request_args["nonce"] = rndstr(16)
             session["nonce"] = request_args["nonce"]
+        else:
+            use_nonce = getattr(self, "use_nonce")
+            if use_nonce:
+                request_args["nonce"] = rndstr(16)
+                session["nonce"] = request_args["nonce"]
+
         server_env["CACHE"][sid] = session
 
         logger.info("client args: %s" % client.__dict__.items(),)
@@ -195,7 +201,7 @@ class OpenIDConnect(Social):
         callback URL you can request the access token the user has
         approved."""
 
-        client = server_env["OIC_CLIENT"][self.extra["name"]]
+        client = server_env["OIC_CLIENT"][self.name]
         authresp = client.parse_response(AuthorizationResponse, info,
                                          format="dict")
 

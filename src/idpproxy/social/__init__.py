@@ -11,12 +11,14 @@ logger = logging.getLogger(__name__)
 
 class Social(object):
     def __init__(self, client_id, client_secret, social_endpoint=None,
-                 attribute_map=None, authenticating_authority=None, **kwargs):
+                 attribute_map=None, authenticating_authority=None,
+                 name="", **kwargs):
         self.client_id = client_id
         self.client_secret = client_secret
         self.attribute_map = attribute_map
         self.social_endpoint = social_endpoint
         self.authenticating_authority = authenticating_authority
+        self.name = name
         self.extra = kwargs
 
     def begin(self, environ, server_env, start_response,
@@ -74,9 +76,10 @@ class Social(object):
                 #(server_env, req_info, response, _environ, source,
                 #session, service="")
                 (stat, headers, content) = do_req_response(server_env,
-                                                           req_info, identity,
-                                                           environ, auth_auth,
-                                                           session, _service)
+                                                    req_info, identity,
+                                                    environ, auth_auth,
+                                                    session,
+                                                    self.extra["saml_endpoint"])
                 headers.append(cookie)
                 if _debug:
                     logger.debug("[do_%s] return headers: %s" % (_service,
