@@ -93,7 +93,7 @@ def authn_response(server_env, req_info, userid, identity,
     logger.debug("User info: %s" % identity)
 
     if service:
-        issuer = "%s%s/metadata.xml" % (server_env["base_url"],service)
+        issuer = "%s%s" % (server_env["base_url"],service)
     else:
         issuer = None
 
