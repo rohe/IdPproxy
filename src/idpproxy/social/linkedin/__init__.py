@@ -1,4 +1,4 @@
-from oictest import OAuth2
+from idpproxy.social.oauth2 import OAuth2
 
 __author__ = 'rohe0002'
 
