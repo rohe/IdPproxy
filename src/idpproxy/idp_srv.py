@@ -92,7 +92,7 @@ def auth_choice(path, environ, start_response, sid, server_env):
             break
 
     if _dic is None:
-        return not_found(start_response, 'Unknown service')
+        return not_found(start_response, 'Unknown service: %s' % path)
 
     logger.debug("[auth_choice] service: %s, function: %s" % (key, func_name))
     logger.debug("environ: %s" % environ)
