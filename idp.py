@@ -62,13 +62,17 @@ def application(environ, start_response):
     #_usage = SERVER_ENV["USAGE"]
     path = environ.get('PATH_INFO', '')
 
+    logger.debug("ENVIRON: %s" % environ)
     _sid = SERVER_ENV["sid_generator"].next()
-    _logger = logging.LoggerAdapter(logger,
-                                    { 'sid' : _sid,
-                                      "remote": environ["REMOTE_HOST"]})
+    try:
+        _remote = environ["REMOTE_HOST"]
+    except KeyError:
+        _remote = environ["REMOTE_ADDR"]
+
+    _logger = logging.LoggerAdapter(logger, {'sid' : _sid, "remote": _remote})
 
     # to avoid getting to duplicated entries
-    _logger.propagate = False
+    #_logger.propagate = False
     _logger.info( "%s %s" % (environ.get("REQUEST_METHOD", ''), path))
     
     kaka = environ.get("HTTP_COOKIE", '')
@@ -172,6 +176,21 @@ def setup_server_env(proxy_conf, conf_mod, key):
     # add the service endpoints
     part = urlparse.urlparse(_idp.conf.entityid)
     base = "%s://%s/" % (part.scheme, part.netloc)
+    SERVER_ENV["SCHEME"] = part.scheme
+    try:
+        (host,port) = part.netloc.split(":")
+        port = int(port)
+    except ValueError: # no port specification
+        host = part.netloc
+        if part.scheme == "http":
+            port = 80
+        elif part.scheme == "https":
+            port = 443
+        else:
+            raise ValueError("Unsupported scheme")
+
+    SERVER_ENV["HOST"] = host
+    SERVER_ENV["PORT"] = port
 
     endpoints = {"single_sign_on_service": [], "single_logout_service": []}
     for key, _dict in proxy_conf.SERVICE.items():
@@ -217,8 +236,6 @@ if __name__ == '__main__':
     from config import idp_proxy_conf
 
     _parser = argparse.ArgumentParser()
-    _parser.add_argument('-p', dest='port', default=8089, type=int,
-                              help="Print debug information")
     _parser.add_argument('-d', dest='debug', action='store_true',
                               help="Print debug information")
     _parser.add_argument('-v', dest='verbose', action='store_true',
@@ -234,19 +251,20 @@ if __name__ == '__main__':
     else:
         key = None
 
-    idp_proxy_conf.PORT = args.port
     #noinspection PyUnboundLocalVariable
     _idp = setup_server_env(idp_proxy_conf, args.config, key)
 
     print SERVER_ENV["base_url"]
-    SRV = wsgiserver.CherryPyWSGIServer(('0.0.0.0', args.port), application)
+    SRV = wsgiserver.CherryPyWSGIServer(('0.0.0.0', SERVER_ENV["PORT"]),
+                                        application)
 
-    SRV.ssl_adapter = ssl_pyopenssl.pyOpenSSLAdapter(idp_proxy_conf.SERVER_CERT,
-                                                     idp_proxy_conf.SERVER_KEY,
-                                                     idp_proxy_conf.CERT_CHAIN)
+    if idp_proxy_conf.SERVER_CERT and idp_proxy_conf.SERVER_KEY:
+        SRV.ssl_adapter = ssl_pyopenssl.pyOpenSSLAdapter(idp_proxy_conf.SERVER_CERT,
+                                                         idp_proxy_conf.SERVER_KEY,
+                                                         idp_proxy_conf.CERT_CHAIN)
 
-    #SRV = make_server(idp_proxy_conf.HOST_NAME, args.port, application)
-    print "listening on port: %s" % args.port
+    #SRV = make_server(SERVER_ENV["host"], SERVER_ENV["port"], application)
+    print "listening on port: %s" % SERVER_ENV["PORT"]
     logger.info("Server up and running!")
 
     try:
