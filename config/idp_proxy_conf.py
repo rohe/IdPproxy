@@ -26,6 +26,9 @@ STATIC_DIR = "static/"
 SECRET = "hemlig_text"
 SIGN = True
 
+# Where consumer keys and secrets can be found
+CONSUMER_INFO = ["file:config/secrets", "metadata"]
+
 # ------- HTTPS -------
 # These should point to relevant files
 SERVER_CERT= ""

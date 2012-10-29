@@ -55,13 +55,13 @@ def local_path(path):
     else:
         return "/".join(pp[1:])
 
-def get_consumer_key_and_secret(social_service, entity_id, server_env):
-    # Consumer key and secret
-    try:
-        server_env["CONSUMER_INFO"][entity_id][social_service]
-    except KeyError:
-        return CONSUMER[social_service]["key"], \
-               CONSUMER[social_service]["secret"]
+#def get_consumer_key_and_secret(social_service, entity_id, server_env):
+#    # Consumer key and secret
+#    try:
+#        server_env["CONSUMER_INFO"][entity_id][social_service]
+#    except KeyError:
+#        return CONSUMER[social_service]["key"], \
+#               CONSUMER[social_service]["secret"]
 
 def auth_choice(path, environ, start_response, sid, server_env):
     """
@@ -145,7 +145,7 @@ def auth_choice(path, environ, start_response, sid, server_env):
     # If we use SP specific client id/secret this is where that gets picked up
 
     try:
-        key, sec = get_consumer_key_and_secret(_dic["name"], entity_id,
+        key, sec = server_env["CONSUMER_INFO"](_dic["name"], entity_id,
                                                server_env)
     except KeyError:
         return not_found(start_response, "No consumer key and secret")

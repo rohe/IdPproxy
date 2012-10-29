@@ -4,7 +4,10 @@ import logging
 import urlparse
 import argparse
 import idpproxy
+import os
+
 from idpproxy import idp_srv
+from idpproxy import utils
 
 from saml2 import server
 from saml2 import BINDING_HTTP_REDIRECT
@@ -115,37 +118,7 @@ def application(environ, start_response):
 # ----------------------------------------------------------------------------
 __author__ = 'rohe0002'
 
-import json
-
-from jwkest.jwe import decrypt
 from jwkest.jwk import rsa_load
-
-from saml2 import extension_elements_to_elements
-from saml2.extension import mdattr, idpdisc
-from saml2.extension.mdattr import EntityAttributes
-
-
-def customer_info(metad, dkeys):
-    res = {}
-
-    for ent,item in metad.entity.items():
-        if "sp_sso" not in item:
-            continue
-
-        for sp in item["sp_sso"]:
-            if sp.extensions is None:
-                continue
-
-            elems = extension_elements_to_elements(sp.extensions.extension_elements,
-                                                   [mdattr, idpdisc])
-            for elem in elems:
-                if isinstance(elem, EntityAttributes):
-                    for attr in elem.attribute:
-                        if attr.name == "http://swamid.sunet.se/customer":
-                            for val in attr.attribute_value:
-                                res[ent] = json.loads(decrypt(val.text, dkeys,
-                                                              "private"))
-    return res
 
 # ----------------------------------------------------------------------------
 
@@ -170,7 +143,10 @@ def setup_server_env(proxy_conf, conf_mod, key):
 
     _idp = server.Server(conf_mod)
 
-    SERVER_ENV["CUSTOMER_INFO"] = customer_info(_idp.metadata, {"rsa": [key]})
+    args = {"metad":_idp.metadata, "dkeys":{"rsa": [key]}}
+
+    SERVER_ENV["CUSTOMER_INFO"] = utils.ConsumerInfo(proxy_conf.CONSUMER_INFO,
+                                                     **args)
     SERVER_ENV["service"] = proxy_conf.SERVICE
 
     # add the service endpoints
