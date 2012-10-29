@@ -95,21 +95,19 @@ class ConsumerInfo(object):
                 self._info.append(MetadataInfo(**kwargs))
 
     def __call__(self, social_service, entity_id):
-        res = []
+        default = ""
         for src in self._info:
             try:
-                res.append(src.get_consumer_key_and_secret(social_service,
-                                                           entity_id))
+                ix, di = src.get_consumer_key_and_secret(social_service,
+                                                         entity_id)
+                if ix:
+                    return di
+                elif not default:
+                    default = di
             except KeyError:
                 pass
 
-        if len(res) == 0:
-            raise KeyError
-        elif len(res) == 1:
-            return res[0][1]
+        if default:
+            return default
         else:
-            for inx, val in res:
-                if inx:
-                    return val
-
-            return res[0][1]
+            raise KeyError
