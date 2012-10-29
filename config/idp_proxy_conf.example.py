@@ -155,6 +155,7 @@ SERVICE = {
             },
         "name": "LinkedIn",
         },
+    # !!! Doesn't work yet !!!
     "paypal": {
         "saml_endpoint":"paypal_sso",
         "social_endpoint":"paypal",
