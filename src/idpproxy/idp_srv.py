@@ -7,8 +7,6 @@ from idpproxy import bad_request
 from idpproxy import relay_state
 from urlparse import parse_qs
 
-from config.secrets import CONSUMER
-
 import logging
 logger = logging.getLogger(__name__)
 
@@ -142,13 +140,12 @@ def auth_choice(path, environ, start_response, sid, server_env):
                                         expire=60)
 
     logger.debug("NEW COOKIE: %s" % (cookie,))
+    #logger.debug("_dic: %s" % (_dic,))
     # If we use SP specific client id/secret this is where that gets picked up
-
     try:
-        key, sec = server_env["CONSUMER_INFO"](_dic["name"], entity_id,
-                                               server_env)
-    except KeyError:
-        return not_found(start_response, "No consumer key and secret")
+        key, sec = server_env["consumer_info"](_dic["name"], entity_id)
+    except KeyError, err:
+        return not_found(start_response, "No consumer key and secret (%s)" % err)
 
     c = _dic["class"](key, sec, **_dic)
     func = getattr(c, func_name)

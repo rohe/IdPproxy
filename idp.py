@@ -4,7 +4,6 @@ import logging
 import urlparse
 import argparse
 import idpproxy
-import os
 
 from idpproxy import idp_srv
 from idpproxy import utils
@@ -40,6 +39,8 @@ def session_nr():
 
         
 EXT_FORMAT = '%(asctime)s %(name)s:%(sid)s:%(remote)s %(levelname)s %(message)s'
+EXT_FORMATTER = logging.Formatter(EXT_FORMAT)
+
 BASE = "/"
 URLS = [
     #(r'logout$', idpproxy.do_logout),
@@ -61,6 +62,7 @@ def application(environ, start_response):
     """
 
     global SERVER_ENV
+    global EXT_FORMATTER
     _debug = SERVER_ENV["DEBUG"]
     #_usage = SERVER_ENV["USAGE"]
     path = environ.get('PATH_INFO', '')
@@ -72,14 +74,20 @@ def application(environ, start_response):
     except KeyError:
         _remote = environ["REMOTE_ADDR"]
 
-    _logger = logging.LoggerAdapter(logger, {'sid' : _sid, "remote": _remote})
+    _logger = logging.getLogger(name="session")
+    if not _logger.handlers:
+        _hndl = SERVER_ENV["idp"].conf.log_handler()
+        _hndl.setFormatter(EXT_FORMATTER)
+        _logger.addHandler(_hndl)
+    _logger = logging.LoggerAdapter(_logger, {'sid' : _sid, "remote": _remote})
+    environ["idpproxy.log"] = _logger
 
-    # to avoid getting to duplicated entries
-    #_logger.propagate = False
+    # to avoid getting duplicated entries
+    _logger.propagate = False
     _logger.info( "%s %s" % (environ.get("REQUEST_METHOD", ''), path))
     
     kaka = environ.get("HTTP_COOKIE", '')
-    _logger.debug("Cookie: %s" % (kaka,))
+    logger.debug("Cookie: %s" % (kaka,))
 
     _cache = SERVER_ENV["CACHE"]
     if kaka:
@@ -89,7 +97,7 @@ def application(environ, start_response):
     else:
         sid = _cache.sid()
 
-    _logger.debug("SID: %s" % sid)
+    logger.debug("SID: %s" % sid)
 
     if idpproxy.static_file(SERVER_ENV, path):
         return idpproxy.static(environ, start_response,
@@ -103,7 +111,7 @@ def application(environ, start_response):
             environ['idpproxy.url_args'] = path
             return idpproxy.base(environ, start_response, user)
         else:
-            _logger.debug("-- No USER --")
+            logger.debug("-- No USER --")
             return idpproxy.not_found(environ, start_response)
             #return idp_srv.not_authn(environ, start_response, _logger,
             # state)
@@ -145,7 +153,7 @@ def setup_server_env(proxy_conf, conf_mod, key):
 
     args = {"metad":_idp.metadata, "dkeys":{"rsa": [key]}}
 
-    SERVER_ENV["CUSTOMER_INFO"] = utils.ConsumerInfo(proxy_conf.CONSUMER_INFO,
+    SERVER_ENV["consumer_info"] = utils.ConsumerInfo(proxy_conf.CONSUMER_INFO,
                                                      **args)
     SERVER_ENV["service"] = proxy_conf.SERVICE
 
@@ -197,6 +205,7 @@ def setup_server_env(proxy_conf, conf_mod, key):
     if proxy_conf.DEBUG:
         logger.setLevel(logging.DEBUG)
 
+    logger.debug("SERVER_ENV: %s" % SERVER_ENV)
     return _idp
 
 def usage():
