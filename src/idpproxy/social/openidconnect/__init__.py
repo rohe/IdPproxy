@@ -129,7 +129,7 @@ class OpenIDConnect(Social):
             request_args["nonce"] = rndstr(16)
             session["nonce"] = request_args["nonce"]
         else:
-            use_nonce = getattr(self, "use_nonce")
+            use_nonce = getattr(self, "use_nonce", None)
             if use_nonce:
                 request_args["nonce"] = rndstr(16)
                 session["nonce"] = request_args["nonce"]
