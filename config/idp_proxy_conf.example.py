@@ -84,7 +84,8 @@ SERVICE = {
                   "https://www.googleapis.com/auth/userinfo.email"],
         "attribute_map": {
             "uid": "id",
-            "email": "email",
+            #"email": "email", # OID 1.2.840.113549.1.9.1
+            "mail": "email", # OID 0.9.2342.19200300.100.1.3
             #"verified_email": true,
             "displayName": "name",
             "givenName": "given_name",
@@ -113,7 +114,8 @@ SERVICE = {
         "attribute_map": {
             "displayName": "name",
             "uid": "user_id",
-            "email": "email",
+            #"email": "email", # OID 1.2.840.113549.1.9.1
+            "mail": "email", # OID 0.9.2342.19200300.100.1.3
             "given_name": "given_name",
             "surname": "family_name"
         }
