@@ -146,7 +146,7 @@ SERVICE = {
         "userinfo_endpoint": "http://api.linkedin.com/v1/people/~?format=json",
         "authorization_endpoint": 'https://www.linkedin.com/uas/oauth/authenticate',
         "class":LinkedIn,
-        "scope": ["r_basicprofile", "r_emailaddress"],
+        "scope": ["r_emailaddress"],
         "attribute_map": {
             #"eduPersonPrincipalName": ("%s@linkedin.com", "user_id"),
             "givenName": "lastName",
