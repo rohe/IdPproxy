@@ -93,7 +93,7 @@ def authn_response(server_env, req_info, userid, identity,
     logger.debug("User info: %s" % identity)
 
     if service:
-        issuer = "%s%s" % (server_env["base_url"],service)
+        issuer = "%s%s" % (server_env["base_url"], service)
     else:
         issuer = None
 
@@ -222,8 +222,7 @@ def return_active_info(environ, start_response, server_env, state):
     #service):
 
     (resp, head, content) = do_req_response(server_env, req_info, identity,
-                                            environ,
-                                            authn_auth, session)
+                                            environ, authn_auth, session)
     start_response(resp, head)
     return content
 
