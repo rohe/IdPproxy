@@ -115,7 +115,7 @@ def authn_response(server_env, req_info, userid, identity,
 
     argv = {
         "action": req_info["consumer_url"],
-        "response": base64.b64encode("".join(authn_resp)),
+        "response": base64.b64encode( "%s" % authn_resp),
         "state": req_info["relay_state"],
     }
 
