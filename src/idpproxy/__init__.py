@@ -104,7 +104,7 @@ def authn_response(server_env, req_info, userid, identity,
                                 req_info["sp_entity_id"],
                                 req_info["request"].name_id_policy,
                                 str(userid),
-                                authn=authn, sign=server_env["SIGN"],
+                                authn=authn, sign_assertion=server_env["SIGN"],
                                 authn_decl=authn_decl,
                                 issuer=issuer)
 
