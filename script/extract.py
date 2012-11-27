@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from saml2 import md
 import sys
 from saml2.md import EntitiesDescriptor
