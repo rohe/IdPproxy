@@ -183,7 +183,7 @@ def setup_server_env(proxy_conf, conf_mod, key):
         endpoints["single_logout_service"].append(("%s%s/logout" % (base,_sso),
                                                    BINDING_HTTP_REDIRECT))
 
-    _idp.conf.endpoints = endpoints
+    _idp.conf.setattr("idp", "endpoints", endpoints)
 
     SERVER_ENV["idp"] = _idp
     SERVER_ENV["template_lookup"] = LOOKUP
