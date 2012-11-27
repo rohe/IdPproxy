@@ -25,7 +25,7 @@ def do_key_descriptor(cert):
         )
     )
 
-def entity_desc(loc, key_descriptor=None, eid=None):
+def entity_desc(loc, key_descriptor=None, eid=None, id=None):
     sso = SingleSignOnService(binding=BINDING_HTTP_REDIRECT, location=loc)
     idp = IDPSSODescriptor(single_sign_on_service=sso,
                            key_descriptor=key_descriptor,
