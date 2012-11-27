@@ -38,6 +38,8 @@ SERVER_KEY=""
 CERT_CHAIN=""
 # ------- HTTPS -------
 
+_PAYPAL="https://www.paypal.com/webapps/auth/protocol/openidconnect/v1"
+
 # SAML endpoint, Social protocol endpoint, protocol handler class
 SERVICE = {
     "facebook":{
@@ -158,10 +160,10 @@ SERVICE = {
     "paypal": {
         "saml_endpoint":"paypal_sso",
         "social_endpoint":"paypal",
-        "authenticating_authority": "https://www.paypal.com/webapps/auth/protocol/openidconnect/v1",
-        "authorization_endpoint": "https://www.paypal.com/webapps/auth/protocol/openidconnect/v1/authorize",
-        "token_endpoint": "https://www.paypal.com/webapps/auth/protocol/openidconnect/v1/tokenservice",
-        "userinfo_endpoint": "https://www.paypal.com/webapps/auth/protocol/openidconnect/v1/userinfo",
+        "authenticating_authority": _PAYPAL,
+        "authorization_endpoint": "%s/authorize" % _PAYPAL,
+        "token_endpoint": "%s/tokenservice" % _PAYPAL,
+        "userinfo_endpoint": "%s/userinfo" % _PAYPAL,
         "scope": ["openid", "profile", "email"],
         "attribute_map": {
             "uid": "uid",
@@ -174,3 +176,6 @@ SERVICE = {
         },
 
     }
+
+for key, val in SERVICE.items():
+    val["entity_id"] = "%s.xml" %key

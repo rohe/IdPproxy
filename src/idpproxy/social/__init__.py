@@ -79,7 +79,7 @@ class Social(object):
                                                     req_info, identity,
                                                     environ, auth_auth,
                                                     session,
-                                                    self.extra["saml_endpoint"])
+                                                    self.extra["entity_id"])
                 headers.append(cookie)
                 if _debug:
                     logger.debug("[do_%s] return headers: %s" % (_service,

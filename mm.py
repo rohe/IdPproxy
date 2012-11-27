@@ -25,8 +25,7 @@ def do_key_descriptor(cert):
         )
     )
 
-def entity_desc(loc, key_descriptor=None, eid=None, validity=None, cache=None,
-                id=None):
+def entity_desc(loc, key_descriptor=None, eid=None):
     sso = SingleSignOnService(binding=BINDING_HTTP_REDIRECT, location=loc)
     idp = IDPSSODescriptor(single_sign_on_service=sso,
                            key_descriptor=key_descriptor,
@@ -49,8 +48,8 @@ def entities_desc(service, ename, base, cert_file=None, validity="", cache="",
     for name, desc in service.items():
         if social is None or name in social:
             loc = "%s/%s" % (base, desc["saml_endpoint"])
-            #eid = "%s/%s" % (base, name)
-            ed.append(entity_desc(loc, key_descriptor, loc))
+            eid = "%s/%s" % (base, desc["entity_id"])
+            ed.append(entity_desc(loc, key_descriptor, eid))
 
     return EntitiesDescriptor(name=ename, entity_descriptor=ed,
                               valid_until = in_a_while(hours=validity),
@@ -68,6 +67,10 @@ if __name__ == "__main__":
     parser.add_argument('-d', dest="duration",
                         help="Indicates the maximum length of time a consumer should cache the metadata",
                         type=int)
+    parser.add_argument('-i', dest="individual", action='store_true',
+                        help="If one metadata file per social service should be constructed")
+    parser.add_argument('-t', dest="target", default=".",
+                        help="where to place the individual metadata files")
     parser.add_argument("soc", nargs="*", help="Which social services to include")
 
     args = parser.parse_args()
@@ -85,8 +88,18 @@ if __name__ == "__main__":
     if args.duration:
         kwargs["cache"] = args.duration
 
-    ed = entities_desc(ipc.SERVICE, "%s/md/idpproxy-1.0.xml" % _base,
-                       _base, cert_file=cnf.CONFIG["cert_file"],
-                       validity=args.validity, **kwargs)
+    if args.individual:
+        for name, desc in ipc.SERVICE.items():
+            kwargs["social"] = [name]
+            ed = entities_desc(ipc.SERVICE, "%s/md/idpproxy-1.0.xml" % _base,
+                               _base, cert_file=cnf.CONFIG["cert_file"],
+                               validity=args.validity, **kwargs)
+            f = open("%s/%s.xml" % (args.target,name), "w")
+            f.write("%s" % ed)
+            f.close()
+    else:
+        ed = entities_desc(ipc.SERVICE, "%s/md/idpproxy-1.0.xml" % _base,
+                           _base, cert_file=cnf.CONFIG["cert_file"],
+                           validity=args.validity, **kwargs)
 
-    print ed
+        print ed
