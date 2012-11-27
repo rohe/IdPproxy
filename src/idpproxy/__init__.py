@@ -98,7 +98,7 @@ def authn_response(server_env, req_info, userid, identity,
         issuer = None
 
     logger.info("ISSUER: %s" % issuer)
-    authn_resp = server_env["idp"].authn_response(identity,
+    authn_resp = server_env["idp"].create_authn_response(identity,
                                 req_info["id"],
                                 req_info["consumer_url"],
                                 req_info["sp_entity_id"],
