@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 import argparse
+from saml2.extension import shibmd
 
 from saml2.sigver import read_cert_from_file
 from saml2.time_util import in_a_while
 
 __author__ = 'rohe0002'
 
-from saml2 import BINDING_HTTP_REDIRECT
+from saml2 import BINDING_HTTP_REDIRECT, element_to_extension_element, md
 from saml2 import samlp
 import xmldsig as ds
 
@@ -25,7 +26,7 @@ def do_key_descriptor(cert):
         )
     )
 
-def entity_desc(loc, key_descriptor=None, eid=None, id=None):
+def entity_desc(loc, key_descriptor=None, eid=None, id=None, scope=None):
     sso = SingleSignOnService(binding=BINDING_HTTP_REDIRECT, location=loc)
     idp = IDPSSODescriptor(single_sign_on_service=sso,
                            key_descriptor=key_descriptor,
@@ -34,10 +35,14 @@ def entity_desc(loc, key_descriptor=None, eid=None, id=None):
     ei = EntityDescriptor(idpsso_descriptor=idp, entity_id=eid,
                            id=id)
 
+    if scope:
+        ei.extensions = md.Extensions()
+        ei.extensions.extension_elements.append(scope)
+
     return ei
 
 def entities_desc(service, ename, base, cert_file=None, validity="", cache="",
-                  social=None):
+                  social=None, scopebase="social2saml.org"):
     ed = []
     if cert_file:
         _cert = read_cert_from_file(cert_file, "pem")
@@ -47,9 +52,10 @@ def entities_desc(service, ename, base, cert_file=None, validity="", cache="",
 
     for name, desc in service.items():
         if social is None or name in social:
+            scope = shibmd.Scope(text="%s.%s" % (name, scopebase))
             loc = "%s/%s" % (base, desc["saml_endpoint"])
             eid = "%s/%s" % (base, desc["entity_id"])
-            ed.append(entity_desc(loc, key_descriptor, eid))
+            ed.append(entity_desc(loc, key_descriptor, eid, scope=scope))
 
     return EntitiesDescriptor(name=ename, entity_descriptor=ed,
                               valid_until = in_a_while(hours=validity),
@@ -69,6 +75,7 @@ if __name__ == "__main__":
                         type=int)
     parser.add_argument('-i', dest="individual", action='store_true',
                         help="If one metadata file per social service should be constructed")
+    parser.add_argument('-b', dest="scopebase", help="Scope base")
     parser.add_argument('-t', dest="target", default=".",
                         help="where to place the individual metadata files")
     parser.add_argument("soc", nargs="*", help="Which social services to include")
@@ -87,6 +94,8 @@ if __name__ == "__main__":
         kwargs["social"] = args.soc
     if args.duration:
         kwargs["cache"] = args.duration
+    if args.scopebase:
+        kwargs["scopebase"] = args.scopebase
 
     if args.individual:
         for name, desc in ipc.SERVICE.items():
