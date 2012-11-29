@@ -108,11 +108,14 @@ class Social(object):
             try:
                 if isinstance(val, tuple):
                     pat, param = val
+                    pval = profile[param]
+                    if isinstance(pval, basestring):
+                        pval = [pval]
                     try:
                         func = getattr(self, pat)
-                        res[key] = [func(v) for v in profile[param]]
+                        res[key] = [func(v) for v in pval]
                     except AttributeError:
-                        res[key] = [pat % v for v in profile[param]]
+                        res[key] = [pat % v for v in pval]
                 else:
                     res[key] = profile[val]
             except KeyError:
