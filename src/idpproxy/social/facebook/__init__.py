@@ -1,3 +1,4 @@
+import urlparse
 from idpproxy.social.oauth2 import OAuth2
 
 from oic.oauth2.message import Message
@@ -18,3 +19,8 @@ class FacebookOAuth2(OAuth2):
     def __init__(self, client_id, client_secret, **kwargs):
         OAuth2.__init__(self, client_id, client_secret, **kwargs)
         self.access_token_response = FacebookAccessTokenResponse
+
+    def eppn_from_link(self, link):
+        p = urlparse.urlparse(link)
+
+        return "%s@%s" % (p.path[1:], p.netloc)

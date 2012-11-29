@@ -56,6 +56,7 @@ SERVICE = {
             "surName": "last_name",
             "displayName": "name",
             "uid": "link",
+            "eppn": ("eppn_from_link", "link")
         },
         "name": "Facebook",
     },
