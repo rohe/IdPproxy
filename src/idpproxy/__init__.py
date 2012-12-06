@@ -423,6 +423,13 @@ def static_file(server_env, path):
     except os.error:
         return False
 
+def metadata_file(server_env, path):
+    try:
+        os.stat(server_env["METADATA_DIR"]+path)
+        return True
+    except os.error:
+        return False
+
 def static(environ, start_response, path):
     try:
         text = open(path).read()
