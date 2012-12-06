@@ -23,6 +23,7 @@ EPTID_DB = "eptid.db"
 DEBUG=True
 
 STATIC_DIR = "static/"
+METADATA_DIR = "metadata/"
 SECRET = "hemlig_text"
 SIGN = True
 
@@ -54,6 +55,8 @@ SERVICE = {
             "surName": "last_name",
             "displayName": "name",
             "uid": "link",
+            "eduPersonPrincipalName": ("eppn_from_link", "link"),
+            "mail": "email"
         },
         "name": "Facebook",
     },
