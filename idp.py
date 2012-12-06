@@ -63,6 +63,7 @@ def application(environ, start_response):
 
     global SERVER_ENV
     global EXT_FORMATTER
+
     _debug = SERVER_ENV["DEBUG"]
     #_usage = SERVER_ENV["USAGE"]
     path = environ.get('PATH_INFO', '')
@@ -102,6 +103,9 @@ def application(environ, start_response):
     if idpproxy.static_file(SERVER_ENV, path):
         return idpproxy.static(environ, start_response,
                                SERVER_ENV["STATIC_DIR"]+path)
+    elif idpproxy.metadata_file(SERVER_ENV, path):
+        return idpproxy.static(environ, start_response,
+                               SERVER_ENV["METADATA_DIR"]+path)
     if path == BASE:
         user = environ.get("REMOTE_USER", "")
         if not user:
@@ -190,6 +194,7 @@ def setup_server_env(proxy_conf, conf_mod, key):
     SERVER_ENV["sid_generator"] = session_nr()
     SERVER_ENV["base_url"] = base
     SERVER_ENV["STATIC_DIR"] = proxy_conf.STATIC_DIR
+    SERVER_ENV["METADATA_DIR"] = proxy_conf.METADATA_DIR
     SERVER_ENV["SIGN"] = proxy_conf.SIGN
 
     #print SERVER_ENV
