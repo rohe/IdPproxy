@@ -52,9 +52,9 @@ def soap_logout_response(idp, req_info, status=None):
     logger.info("LOGOUT of '%s' by '%s'" % (req_info.subject_id(),
                                             req_info["sp_entity_id"]))
     
-    resultcode, headers, message = idp.logout_response(req_info,
-                                                       [BINDING_SOAP],
-                                                       status)
+    resultcode, headers, message = idp.create_logout_response(req_info,
+                                                              [BINDING_SOAP],
+                                                              status)
     return resultcode, headers, message
 
 #noinspection PyUnusedLocal
@@ -62,7 +62,7 @@ def logout_response(server_env, req_info, status=None):
     logger.info("LOGOUT of '%s' by '%s'" % (req_info.subject_id(),
                                             req_info["sp_entity_id"]))
 
-    return server_env["idp"].logout_response(req_info, [BINDING_HTTP_REDIRECT,
+    return server_env["idp"].create_logout_response(req_info, [BINDING_HTTP_REDIRECT,
                                              BINDING_HTTP_POST], status,
                                              sign=server_env["SIGN"])
 
@@ -71,9 +71,10 @@ def err_response(server_env, req_info, info):
     :param info: Either an exception or and 2-tuple (SAML error code, txt)
     """
 
-    err_resp = server_env["idp"].error_response(req_info["consumer_url"],
-                                                req_info["id"],
-                                                req_info["sp_entity_id"], info)
+    err_resp = server_env["idp"].create_error_response(req_info["id"],
+                                                req_info["consumer_url"],
+                                                info,
+                                                issuer=req_info["sp_entity_id"])
 
     logger.info("LOGIN failed ErrResponse: %s" % err_resp)
 
