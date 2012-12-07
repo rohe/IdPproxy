@@ -104,7 +104,11 @@ def auth_choice(path, environ, start_response, sid, server_env):
             return not_found(start_response, 'Missing argument')
 
         logger.debug("[auth_choice] query: %s" % query)
-        entity_id = _cache[sid]["entity_id"]
+        try:
+            entity_id = _cache[sid]["entity_id"]
+        except KeyError:
+            exception_log()
+            return bad_request(start_response, "Unknown session")
     else: # This is the SAML endpoint
         try:
             query = parse_qs(environ["QUERY_STRING"])
