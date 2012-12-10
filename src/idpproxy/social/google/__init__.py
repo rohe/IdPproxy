@@ -66,3 +66,11 @@ class GoogleOIC(OpenIDConnect):
                                            schema="openid",
                                            token=access_token,
                                            behavior="use_authorization_header")
+
+    def eppn_from_mail(self, mail):
+        loc,dom = mail.split("@")
+
+        if dom != "gmail.com":
+            loc += ".%s" % dom
+
+        return "%s@google.%s" % (loc, self.extra["DOMAIN"])

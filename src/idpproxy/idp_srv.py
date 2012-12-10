@@ -89,6 +89,8 @@ def auth_choice(path, environ, start_response, sid, server_env):
             func_name = "callback"
             break
 
+    _dic["DOMAIN"] = server_env["DOMAIN"]
+
     if _dic is None:
         return not_found(start_response, 'Unknown service: %s' % path)
 

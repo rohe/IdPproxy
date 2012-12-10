@@ -22,6 +22,7 @@ EPTID_DB = "eptid.db"
 # debugging or not
 DEBUG=True
 
+DOMAIN = "social2saml.org"
 STATIC_DIR = "static/"
 METADATA_DIR = "metadata/"
 SECRET = "hemlig_text"

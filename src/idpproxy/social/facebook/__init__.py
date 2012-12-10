@@ -23,4 +23,4 @@ class FacebookOAuth2(OAuth2):
     def eppn_from_link(self, link):
         p = urlparse.urlparse(link)
 
-        return "%s@%s" % (p.path[1:], p.netloc)
+        return "%s@facebook.%s" % (p.path[1:], self.extra["DOMAIN"])
