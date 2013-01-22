@@ -1,11 +1,13 @@
 #!/usr/bin/env python
+from saml2 import BINDING_HTTP_REDIRECT
 
 __author__ = 'rolandh'
 
 from idpproxy import exception_log
 from idpproxy import bad_request
-from idpproxy import relay_state
 from urlparse import parse_qs
+
+from saml2.httputil import Response, NotFound, ServiceError, unpack_redirect
 
 import logging
 logger = logging.getLogger(__name__)
@@ -16,9 +18,9 @@ BASE = "/"
 AUTH_CHOICE = BASE + "AuthChoice"
 POLICY = "policy.html"
 
-def not_found(start_response, text):
-    start_response('404 NOT FOUND', [('Content-Type', 'text/plain')])
-    return [text]
+def not_found(environ, start_response, text):
+    resp = NotFound(text)
+    return resp(environ, start_response)
 
 def match(path, service):
     """
@@ -92,7 +94,7 @@ def auth_choice(path, environ, start_response, sid, server_env):
     _dic["DOMAIN"] = server_env["DOMAIN"]
 
     if _dic is None:
-        return not_found(start_response, 'Unknown service: %s' % path)
+        return not_found(environ, start_response, 'Unknown service: %s' % path)
 
     logger.debug("[auth_choice] service: %s, function: %s" % (key, func_name))
     logger.debug("environ: %s" % environ)
@@ -103,42 +105,52 @@ def auth_choice(path, environ, start_response, sid, server_env):
         try:
             query = parse_qs(environ["QUERY_STRING"])
         except KeyError:
-            return not_found(start_response, 'Missing argument')
+            return not_found(environ, start_response, 'Missing argument')
 
         logger.debug("[auth_choice] query: %s" % query)
         try:
             entity_id = _cache[sid]["entity_id"]
         except KeyError:
             exception_log()
-            return bad_request(start_response, "Unknown session")
+            return bad_request(environ, start_response, "Unknown session")
     else: # This is the SAML endpoint
+        # Should I support mote then HTTP redirect
+        _dict = unpack_redirect(environ)
+        if _dict == None:
+            return bad_request(environ, start_response, "Request missing")
+
         try:
-            query = parse_qs(environ["QUERY_STRING"])
+            query = _dict["SAMLRequest"]
         except KeyError:
-            query = None
+            return bad_request(environ, start_response, "Request missing")
 
         if query:
             logger.debug("Query: %s" % query)
 
             try:
-                req_info = server_env["idp"].parse_authn_request(
-                                                    query["SAMLRequest"][0])
+                req_info = server_env["idp"].parse_authn_request(query,
+                                                                 BINDING_HTTP_REDIRECT)
             except KeyError:
                 exception_log()
-                return bad_request(start_response,
-                                            "Expected SAML request")
+                return bad_request(environ, start_response,
+                                   "Expected SAML request")
             except Exception, exc:
                 exception_log()
-                return bad_request(start_response,
-                                            "Faulty SAML request: %s" % exc)
+                return bad_request(environ, start_response,
+                                   "Faulty SAML request: %s" % exc)
 
-            req_info["relay_state"] = relay_state(query)
+            try:
+                req_info.relay_state = _dict["RelayState"]
+            except KeyError:
+                pass
 
-            entity_id = req_info["sp_entity_id"]
-            logger.debug("REQ_INFO: %s" % req_info)
+            logger.debug("type req_info: %s message: %s" % (type(req_info),
+                                                            type(req_info.message)))
+
+            entity_id = req_info.sender()
             _cache.set(sid, {"req_info": req_info, "entity_id": entity_id})
         else:
-            return not_found(start_response, "No query")
+            return not_found(environ, start_response, "No query")
 
     logger.debug("SID: %s" % sid)
     cookie = server_env["CACHE"].create_cookie(sid,
@@ -151,7 +163,8 @@ def auth_choice(path, environ, start_response, sid, server_env):
     try:
         key, sec = server_env["consumer_info"](_dic["name"], entity_id)
     except KeyError, err:
-        return not_found(start_response, "No consumer key and secret (%s)" % err)
+        return not_found(environ, start_response,
+                         "No consumer key and secret (%s)" % err)
 
     c = _dic["class"](key, sec, **_dic)
     func = getattr(c, func_name)
@@ -163,10 +176,16 @@ def logo(environ, start_response, serv_env):
     name = environ['idpproxy.url_args']
     try:
         pict = open(name).read()
-        start_response('200 OK', [('Content-Type',
-                                   serv_env["LOGO_TYPE"][name[7:]])])
-        return [pict]
-    except IOError:
-        return not_found(environ, start_response)
+        resp = Response(pict, headers=[('Content-Type',
+                                        serv_env["LOGO_TYPE"][name[7:]])])
+    except IOError, exc:
+        resp = ServiceError("%s" % exc)
+
+    return resp(environ, start_response)
 
 # ----------------------------------------------------------------------------
+
+def logout(environ, start_response, sid, server_env):
+    msg = ""
+    resp = Response(msg)
+    return resp(environ, start_response)

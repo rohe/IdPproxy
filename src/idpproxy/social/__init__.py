@@ -3,6 +3,7 @@
 from saml2 import samlp
 
 import logging
+from saml2.httputil import Response, ServiceError
 from idpproxy import exception_log
 from idpproxy import err_response
 from idpproxy import do_req_response
@@ -48,7 +49,7 @@ class Social(object):
             result = self.phaseN(environ, info, server_env, sid)
             logger.debug("[do_%s] response: %s" % (_service, result))
 
-            if isinstance(result[2], list): # in process
+            if isinstance(session, list): # in process
                 start_response(result[0], result[1])
                 return result[2]
 
@@ -60,9 +61,7 @@ class Social(object):
 
         except Exception, exc:
             exception_log()
-            (stat, headers, content) = err_response(server_env, req_info, exc)
-            start_response(stat, headers)
-            return content
+            return err_response(server_env, req_info, exc)
 
         logger.debug("Session: %s" % session)
         # redirect back to the SP
@@ -75,29 +74,23 @@ class Social(object):
                     auth_auth = session["authn_auth"]
                 #(server_env, req_info, response, _environ, source,
                 #session, service="")
-                (stat, headers, content) = do_req_response(server_env,
-                                                    req_info, identity,
-                                                    environ, auth_auth,
-                                                    session,
-                                                    self.extra["entity_id"])
-                headers.append(cookie)
+                resp = do_req_response(server_env, req_info, identity,
+                                           environ, auth_auth, session,
+                                           self.extra["entity_id"])
+                resp.headers.append(cookie)
                 if _debug:
                     logger.debug("[do_%s] return headers: %s" % (_service,
-                                                                 headers))
+                                                                 resp.headers))
             else:
                 session["authentication"] = "FAILED"
                 error_info = (samlp.STATUS_AUTHN_FAILED , identity)
-                (stat, headers, content) = err_response(server_env, req_info,
-                                                        error_info)
-
-                headers.append(cookie)
-            start_response(stat, headers)
+                resp = err_response(server_env, req_info, error_info)
+                resp.headers.append(cookie)
         else:
-            content = ["%s" % identity]
-            start_response('200 OK', [('Content-Type', 'text/html')])
+            resp = Response("%s" % identity)
 
         #return content
-        return content
+        return resp(environ, start_response)
 
     def convert(self, profile):
         if self.attribute_map is None:

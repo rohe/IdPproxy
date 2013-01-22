@@ -77,7 +77,7 @@ def application(environ, start_response):
 
     _logger = logging.getLogger(name="session")
     if not _logger.handlers:
-        _hndl = SERVER_ENV["idp"].conf.log_handler()
+        _hndl = SERVER_ENV["idp"].config.log_handler()
         _hndl.setFormatter(EXT_FORMATTER)
         _logger.addHandler(_hndl)
     _logger = logging.LoggerAdapter(_logger, {'sid' : _sid, "remote": _remote})
@@ -108,20 +108,21 @@ def application(environ, start_response):
                                SERVER_ENV["METADATA_DIR"]+path)
     if path == BASE:
         user = environ.get("REMOTE_USER", "")
-        if not user:
-            user = environ.get("repoze.who.identity", "")
+#        if not user:
+#            user = environ.get("repoze.who.identity", "")
 
         if user:
             environ['idpproxy.url_args'] = path
             return idpproxy.base(environ, start_response, user)
         else:
             logger.debug("-- No USER --")
-            return idpproxy.not_found(environ, start_response)
-            #return idp_srv.not_authn(environ, start_response, _logger,
-            # state)
+            #return idpproxy.not_found(environ, start_response)
+            return idpproxy.not_authn(environ, start_response)
     elif path.startswith("/logo/"):
         environ['idpproxy.url_args'] = "."+path
         return idp_srv.logo(environ, start_response, SERVER_ENV)
+    elif path == "/logout":
+        return idp_srv.logout(environ, start_response, sid, SERVER_ENV)
     else:
         environ['idpproxy.url_args'] = ""
         return idp_srv.auth_choice(path, environ, start_response, sid,
@@ -162,7 +163,7 @@ def setup_server_env(proxy_conf, conf_mod, key):
     SERVER_ENV["service"] = proxy_conf.SERVICE
 
     # add the service endpoints
-    part = urlparse.urlparse(_idp.conf.entityid)
+    part = urlparse.urlparse(_idp.config.entityid)
     base = "%s://%s/" % (part.scheme, part.netloc)
     SERVER_ENV["SCHEME"] = part.scheme
     try:
@@ -187,7 +188,7 @@ def setup_server_env(proxy_conf, conf_mod, key):
         endpoints["single_logout_service"].append(("%s%s/logout" % (base,_sso),
                                                    BINDING_HTTP_REDIRECT))
 
-    _idp.conf.setattr("idp", "endpoints", endpoints)
+    _idp.config.setattr("idp", "endpoints", endpoints)
 
     SERVER_ENV["idp"] = _idp
     SERVER_ENV["template_lookup"] = LOOKUP
@@ -206,7 +207,7 @@ def setup_server_env(proxy_conf, conf_mod, key):
                                           SERVER_ENV["SECRET"],
                                           filename=proxy_conf.CACHE[5:])
     
-    logger = setup_logger(_idp.conf)
+    logger = setup_logger(_idp.config)
     if proxy_conf.DEBUG:
         logger.setLevel(logging.DEBUG)
 
@@ -221,7 +222,7 @@ if __name__ == '__main__':
 
     #from wsgiref.simple_server import make_server
     from cherrypy import wsgiserver
-    from cherrypy.wsgiserver import ssl_pyopenssl
+    #from cherrypy.wsgiserver import ssl_pyopenssl
 
     from config import idp_proxy_conf
 
@@ -248,10 +249,10 @@ if __name__ == '__main__':
     SRV = wsgiserver.CherryPyWSGIServer(('0.0.0.0', SERVER_ENV["PORT"]),
                                         application)
 
-    if idp_proxy_conf.SERVER_CERT and idp_proxy_conf.SERVER_KEY:
-        SRV.ssl_adapter = ssl_pyopenssl.pyOpenSSLAdapter(idp_proxy_conf.SERVER_CERT,
-                                                         idp_proxy_conf.SERVER_KEY,
-                                                         idp_proxy_conf.CERT_CHAIN)
+    #if idp_proxy_conf.SERVER_CERT and idp_proxy_conf.SERVER_KEY:
+    #    SRV.ssl_adapter = ssl_pyopenssl.pyOpenSSLAdapter(idp_proxy_conf.SERVER_CERT,
+    #                                                     idp_proxy_conf.SERVER_KEY,
+    #                                                     idp_proxy_conf.CERT_CHAIN)
 
     #SRV = make_server(SERVER_ENV["host"], SERVER_ENV["port"], application)
     print "listening on port: %s" % SERVER_ENV["PORT"]

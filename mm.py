@@ -7,7 +7,7 @@ from saml2.time_util import in_a_while
 
 __author__ = 'rohe0002'
 
-from saml2 import BINDING_HTTP_REDIRECT, element_to_extension_element, md
+from saml2 import BINDING_HTTP_REDIRECT, md
 from saml2 import samlp
 import xmldsig as ds
 

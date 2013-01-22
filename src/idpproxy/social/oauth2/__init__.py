@@ -9,6 +9,8 @@ from oic.oauth2.message import AccessTokenResponse
 from oic.oauth2.message import AuthorizationResponse
 from oic.oauth2.message import AuthorizationRequest
 
+from oic.utils.http_util import Redirect
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -39,12 +41,11 @@ class OAuth2(Social):
                                                "scope":self._scope})
         url = ar.request(self.extra["authorization_endpoint"])
         logger.info("[OAuth2] callback url: %s" % url)
-        _headers = [("Location", url), cookie]
-        start_response("302 Found", _headers)
-        return []
-
-    #https://www.facebook.com/dialog/oauth?
-    #client_id=YOUR_APP_ID&redirect_uri=YOUR_URL&scope=email,read_stream
+        if cookie:
+            resp = Redirect(url, headers=[cookie])
+        else:
+            resp = Redirect(url)
+        return resp(environ, start_response)
 
     #noinspection PyUnusedLocal
     def userinfo_endpoint(self, tokenresp):
@@ -99,5 +100,6 @@ class OAuth2(Social):
         session["permanent_id"] = profile["id"]
 
         server_env["CACHE"][sid] = session
+
 
         return True, self.convert(profile), session

@@ -63,16 +63,17 @@ class MetadataInfo(Info):
     def __call__(self):
         res = {}
 
-        for ent,item in self.metad.entity.items():
+        for ent,item in self.metad.items():
             if "sp_sso" not in item:
                 continue
 
             for sp in item["sp_sso"]:
-                if sp.extensions is None:
+                if "extensions" not in sp:
                     continue
 
-                elems = extension_elements_to_elements(sp.extensions.extension_elements,
-                                                       [mdattr, idpdisc])
+                elems = extension_elements_to_elements(
+                                        sp["extensions"]["extension_elements"],
+                                        [mdattr, idpdisc])
                 for elem in elems:
                     if isinstance(elem, EntityAttributes):
                         for attr in elem.attribute:

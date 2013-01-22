@@ -3,16 +3,27 @@ __author__ = 'rolandh'
 
 import os
 import sys
-import base64
 import urlparse
 import traceback
 import logging
 
 from urlparse import parse_qs
 
-from saml2 import saml, mcache, samlp
+from saml2 import saml, mcache, samlp, BINDING_HTTP_ARTIFACT, BINDING_URI
 from saml2 import s_utils
-from saml2 import BINDING_HTTP_REDIRECT, BINDING_SOAP, BINDING_HTTP_POST
+from saml2 import BINDING_SOAP
+from saml2 import BINDING_HTTP_POST
+from saml2 import BINDING_HTTP_REDIRECT
+
+from saml2.httputil import BadRequest
+from saml2.httputil import ServiceError
+from saml2.httputil import Response
+from saml2.httputil import Unauthorized
+from saml2.httputil import Redirect
+from saml2.httputil import NotFound
+
+from saml2.httputil import unpack_any
+from saml2.httputil import unpack_artifact
 
 from saml2.s_utils import UnknownPrincipal
 from saml2.s_utils import UnsupportedBinding
@@ -23,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 #noinspection PyUnusedLocal
 def NOT_AUTHN(environ, start_response, state, req_info):
-    return bad_request(start_response, "Unimplemented")
+    return bad_request(environ, start_response, "Unimplemented")
 
 # ----------------------------------------------------------------------------
 
@@ -48,44 +59,58 @@ def cgi_field_storage_to_dict( field_storage ):
 # ----------------------------------------------------------------------------
 
 #noinspection PyUnusedLocal
-def soap_logout_response(idp, req_info, status=None):
-    logger.info("LOGOUT of '%s' by '%s'" % (req_info.subject_id(),
-                                            req_info["sp_entity_id"]))
-    
-    resultcode, headers, message = idp.create_logout_response(req_info,
-                                                              [BINDING_SOAP],
-                                                              status)
-    return resultcode, headers, message
-
-#noinspection PyUnusedLocal
 def logout_response(server_env, req_info, status=None):
     logger.info("LOGOUT of '%s' by '%s'" % (req_info.subject_id(),
-                                            req_info["sp_entity_id"]))
+                                            req_info.sender()))
 
-    return server_env["idp"].create_logout_response(req_info, [BINDING_HTTP_REDIRECT,
-                                             BINDING_HTTP_POST], status,
-                                             sign=server_env["SIGN"])
+    _idp = server_env["idp"]
+    if req_info.binding != BINDING_SOAP:
+        bindings = [BINDING_HTTP_REDIRECT, BINDING_HTTP_POST]
+        binding, destination = _idp.pick_binding("single_logout_service",
+                                                 bindings,
+                                                 entity_id=req_info.sender())
+        bindings = [binding]
+    else:
+        bindings = [BINDING_SOAP]
+        destination = ""
 
-def err_response(server_env, req_info, info):
+
+    response = _idp.create_logout_response(req_info.message, bindings,
+                                           status, sign=server_env["SIGN"])
+
+    ht_args = _idp.apply_binding(bindings[0], "%s" % response,
+                                 destination, req_info.relay_state,
+                                 response=True)
+
+    return Response(**ht_args)
+
+def err_response(server_env, req_info, info,
+                 endpoint="assertion_consumer_service"):
     """
     :param info: Either an exception or and 2-tuple (SAML error code, txt)
     """
 
-    err_resp = server_env["idp"].create_error_response(req_info["id"],
-                                                req_info["consumer_url"],
-                                                info,
-                                                issuer=req_info["sp_entity_id"])
+    _idp = server_env["idp"]
 
-    logger.info("LOGIN failed ErrResponse: %s" % err_resp)
+    if req_info.binding != BINDING_SOAP:
+        bindings = [BINDING_HTTP_REDIRECT, BINDING_HTTP_POST]
+        binding, destination = _idp.pick_binding(endpoint, bindings,
+                                                 entity_id=req_info.sender())
+        bindings = [binding]
+    else:
+        bindings = [BINDING_SOAP]
+        destination = ""
 
-    argv = {
-        "action": req_info["consumer_url"],
-        "response": base64.b64encode("%s" % err_resp),
-        "state": req_info["relay_state"],
-    }
+    err_resp = _idp.create_error_response(req_info.message.id, destination,
+                                          info, issuer=req_info.sender())
 
-    template = server_env["template_lookup"].get_template("sso_form.mako")
-    return '200 OK', [('Content-Type', 'text/html')], [template.render(**argv)]
+    logger.info("ErrResponse: %s" % err_resp)
+
+    ht_args = _idp.apply_binding(bindings[0], "%s" % err_resp,
+                                 destination, req_info.relay_state,
+                                 response=True)
+
+    return Response(**ht_args)
 
 def authn_response(server_env, req_info, userid, identity,
                    authn=None, authn_decl=None, service=""):
@@ -99,33 +124,35 @@ def authn_response(server_env, req_info, userid, identity,
         issuer = None
 
     logger.info("ISSUER: %s" % issuer)
-    authn_resp = server_env["idp"].create_authn_response(identity,
-                                req_info["id"],
-                                req_info["consumer_url"],
-                                req_info["sp_entity_id"],
-                                req_info["request"].name_id_policy,
-                                str(userid),
-                                authn=authn, sign_assertion=server_env["SIGN"],
-                                authn_decl=authn_decl,
-                                issuer=issuer)
+    _idp = server_env["idp"]
 
-    logger.info("LOGIN success: sp_entity_id=%s#authn=%s" % (
-                                            req_info["sp_entity_id"],
-                                            authn))
+    binding, destination = _idp.pick_binding("assertion_consumer_service",
+                                             entity_id=req_info.sender())
+
+    logger.debug("binding: %s, destination: %s" % (binding, destination))
+
+    authn_resp = _idp.create_authn_response(identity, req_info.message.id,
+                                            destination,
+                                            req_info.sender(),
+                                            req_info.message.name_id_policy,
+                                            str(userid), authn=authn, 
+                                            sign_assertion=server_env["SIGN"],
+                                            authn_decl=authn_decl,
+                                            issuer=issuer)
+
+    logger.info("LOGIN success: sp_entity_id=%s#authn=%s" % (req_info.sender(),
+                                                             authn))
     logger.debug("AuthNResponse: %s" % authn_resp)
 
-    argv = {
-        "action": req_info["consumer_url"],
-        "response": base64.b64encode( "%s" % authn_resp),
-        "state": req_info["relay_state"],
-    }
+    ht_args = _idp.apply_binding(binding, "%s" % authn_resp, destination,
+                                 req_info.relay_state, response=True)
 
-    logger.debug("template action:%s state:%s" % (argv["action"],
-                                                  argv["state"]))
+    logger.debug("ht_args: %s" % ht_args)
 
-    template = server_env["template_lookup"].get_template("sso_form.mako")
-    return ('200 OK', [('Content-Type', 'text/html')],
-                                            [template.render(**argv)])
+    if "status" in ht_args and ht_args["status"] == 302:
+        return Redirect(ht_args["data"], headers=ht_args["headers"])
+    else:
+        return Response(ht_args["data"], headers=ht_args["headers"])
 
 # -----------------------------------------------------------------------------
 
@@ -133,12 +160,12 @@ def authn_response(server_env, req_info, userid, identity,
 def get_eptid(server_env, req_info, identity, session):
 
     args_ = (session["permanent_id"], [session["authn_auth"]])
-    return server_env["eptid"].get(server_env["idp"].conf.entityid,
-                                    req_info["sp_entity_id"],
+    return server_env["eptid"].get(server_env["idp"].config.entityid,
+                                    req_info.sender(),
                                     args_)
 
 #noinspection PyUnusedLocal
-def do_req_response(server_env, req_info, response, _environ, source,
+def do_req_response(server_env, req_info, response, environ, source,
                     session, service=""):
     if session["status"] == "FAILURE":
         info = (samlp.STATUS_AUTHN_FAILED, response)
@@ -176,24 +203,24 @@ def return_active_info(environ, start_response, server_env, state):
     try:
         req_info = get_authn_request(environ, server_env)
     except UnknownPrincipal:
-        start_response('400 Bad Request', [('Content-Type', 'text/plain')])
-        return ["Don't know the SP that referred you here"]
+        resp = BadRequest("Don't know the SP that referred you here")
+        return resp(environ, start_response)
     except UnsupportedBinding:
-        start_response('400 Bad Request', [('Content-Type', 'text/plain')])
-        return ["Don't know how to reply to the SP that referred you here"]
+        resp = BadRequest("Don't know how to reply to the SP that referred you here")
+        return resp(environ, start_response)
     except Exception:
-        start_response('400 Bad Request', [('Content-Type', 'text/plain')])
-        return ["Exception while parsing the AuthnRequest"]
+        resp = BadRequest("Exception while parsing the AuthnRequest")
+        return resp(environ, start_response)
 
     if req_info is None:
         # return error message
-        start_response('400 Bad Request', [('Content-Type', 'text/plain')])
-        return ["Missing SAMLRequest"]
+        resp = BadRequest("Missing SAMLRequest")
+        return resp(environ, start_response)
 
     if req_info:
-        session = state.old_session(req_info["sp_entity_id"])
+        session = state.old_session(req_info.sender())
         if session:
-            if req_info["request"].force_authn: # even if active session
+            if req_info.message.force_authn: # even if active session
                 session.reset()
                 session["req_info"] = req_info
                 start_response("302 Found", [("Location", "/")])
@@ -222,96 +249,67 @@ def return_active_info(environ, start_response, server_env, state):
     #def do_req_response(req_info, response, _environ, source, session,
     #service):
 
-    (resp, head, content) = do_req_response(server_env, req_info, identity,
-                                            environ, authn_auth, session)
-    start_response(resp, head)
-    return content
+    resp = do_req_response(server_env, req_info, identity, environ, authn_auth, 
+                           session)
+    return resp(environ, start_response)
 
 # ----------------------------------------------------------------------------
 
+
 def do_logout(environ, start_response, server_env, state):
-    """ Get a POSTed request """
+    """ Get a request """
+    logger.info("--- LOGOUT ---")
 
-    if environ['REQUEST_METHOD'].upper() != 'POST':
-        start_response("400 Bad request", [('Content-Type', 'text/plain')])
-        return []
+    _dict, binding = unpack_any(environ)
+    logger.debug("Binding: %s, _dict: %s" % (binding, _dict))
+    resp = None
+    if binding == BINDING_HTTP_ARTIFACT:
+        resp = ServiceError("Artifact support not yet implemented")
+    elif binding == BINDING_URI:
+        resp = BadRequest("Binding not applicable")
 
-    content_type = environ.get('CONTENT_TYPE', 'application/soap+xml')
-    if content_type != 'application/soap+xml':
-        start_response("400 Bad request", [('Content-Type', 'text/plain')])
-        return []
+    if resp:
+        return resp(environ, start_response)
 
-    _debug = server_env["DEBUG"]
-
-    length = int(environ["CONTENT_LENGTH"])
-    request = environ["wsgi.input"].read(length)
+    try:
+        request = _dict["SAMLRequest"]
+    except:
+        resp = BadRequest("Request missing")
+        return resp(environ, start_response)
 
     try:
         req_info = server_env["idp"].parse_logout_request(request)
+        req_info.binding = binding
+        try:
+            req_info.relay_state = _dict["relay_state"]
+        except KeyError:
+            pass
+
         logger.debug("LOGOUT request parsed OK")
         logger.debug("REQ_INFO: %s" % req_info.message)
     except KeyError, exc:
         logger.error("logout request error: %s" % (exc,))
-        start_response("400 Bad request", [('Content-Type', 'text/plain')])
-        return ["Erroneous logout request"]
+        resp = BadRequest("Erroneous logout request")
+        return resp(environ, start_response)
 
     if not state.known_session(req_info.issuer()):
-        start_response("400 Bad request", [('Content-Type', 'text/plain')])
-        return ["Logout request from someone I know nothing about"]
+        resp = BadRequest("Logout request from someone I know nothing about")
+        return resp(environ, start_response)
 
     # look for the subject
     subject = req_info.subject_id()
     logger.debug("Logout subject: %s" % (subject.text.strip(),))
     status = None
 
-    session = state.old_session(req_info["sp_entity_id"])
+    session = state.old_session(req_info.sender())
     if session:
         session["authentication"] = "OFF"
 
-    (resp, head, content) = do_logout_response(req_info.message,
-                                                status)
-    start_response(resp, head)
-    return content
+    resp = do_logout_response(req_info, status)
+    return resp(environ, start_response)
 
-def redirect_logout(environ, start_response, server_env, state):
-
-    logout_req = None
-    if "QUERY_STRING" in environ:
-        _debug = server_env["DEBUG"]
-        query = parse_qs(environ["QUERY_STRING"])
-        logger.debug("[redirect_logout] query: %s" % query)
-        try:
-            logout_req = server_env["idp"].parse_logout_request(
-                                query["SAMLRequest"][0], BINDING_HTTP_REDIRECT)
-            logger.debug("LOGOUT request parsed OK")
-            logger.debug("LOGOUT_REQ: %s" % logout_req)
-        except KeyError:
-            # return error reply
-            start_response('404 NOT FOUND', [('Content-Type', 'text/plain')])
-            return ['Missing session']
-
-    if logout_req is None:
-        start_response('400 Bad Request', [('Content-Type', 'text/plain')])
-        return ['Missing logout request']
-
-    # look for the subject
-    subject = logout_req.subject_id()
-    logger.info("Logout subject: %s" % (subject.text.strip(),))
-    status = None
-
-    (resp, head, content) = do_logout_response(logout_req.message,
-                                                status)
-    head.append(state.cookie(expire="now"))
-    start_response(resp, head)
-    return content
 
 # ----------------------------------------------------------------------------
-
-def relay_state(dic):
-    try:
-        return dic["RelayState"][0]
-    except KeyError:
-        return ""
 
 def authentication_state(info):
     try:
@@ -328,14 +326,14 @@ def get_session_id(environ):
         qdict = parse_qs(environ["QUERY_STRING"])
         return qdict["sessionid"][0]
 
-def bad_request(start_response, msg):
-    start_response('400 Bad Request', [('Content-Type', 'text/plain')])
-    return [msg]
+def bad_request(environ, start_response, msg):
+    resp = BadRequest(msg)
+    return resp(environ, start_response)
 
 #noinspection PyUnusedLocal
-def base(_environ, start_response, _user):
-    start_response('200 OK', [('Content-Type', 'text/html')])
-    return ["PLACEHOLDER !!!"]
+def base(environ, start_response, _user):
+    resp = Response("PLACEHOLDER !!!")
+    return resp(environ, start_response)
 
 # =============================================================================
 
@@ -350,24 +348,34 @@ def get_authn_request(environ, server_env):
         AuthnRequest.
     """
 
-    if "QUERY_STRING" in environ:
-        _debug = server_env["DEBUG"]
-        query = parse_qs(environ["QUERY_STRING"])
-        logger.debug("[get_authn_request] query: %s" % query)
-        if query:
+    # Redirect or POST bindings supported
+    _dict = unpack_artifact(environ)
+
+    if not _dict:
+        return None
+
+
+    req = _dict["SAMLRequest"]
+    logger.debug("[get_authn_request] query: %s" % req)
+    if req:
+        try:
+            _req = server_env["idp"].parse_authn_request(req)
+            logger.debug("[get_authn_request] AUTHN request parsed OK")
+            if environ["REQUEST_METHOD"] == "GET":
+                _req.binding = BINDING_HTTP_REDIRECT
+            else:
+                _req.binding = BINDING_HTTP_POST
             try:
-                req_info = server_env["idp"].parse_authn_request(
-                                                        query["SAMLRequest"][0])
-                req_info["relay_state"] = relay_state(query)
-                logger.debug("[get_authn_request] AUTHN request parsed OK")
-                logger.debug("[get_authn_request] REQ_INFO: %s" % req_info)
-                return req_info
+                _req.relay_state = _dict["RelayState"]
             except KeyError:
-                return None
-            except (UnknownPrincipal, UnsupportedBinding):
-                logger.error(
-                    "[get_authn_request] Unknown principal or unknown binding")
-                raise
+                pass
+            return _req
+        except KeyError:
+            return None
+        except (UnknownPrincipal, UnsupportedBinding):
+            logger.error(
+                "[get_authn_request] Unknown principal or unknown binding")
+            raise
 
     return None
 
@@ -388,15 +396,15 @@ def authn_init(environ, start_response, server_env, state, _debug,
     logger.debug("[%s]" % _service)
 
     try:
-        req_info = get_authn_request(environ, server_env)
+        req, relay_state = get_authn_request(environ, server_env)
     except Exception:
         raise Exception("Exception while parsing the AuthnRequest")
 
-    if req_info:
-        logger.debug("[%s]req_info: %s" % (_service, req_info))
-        session = state.get_session(req_info["sp_entity_id"])
+    if req:
+        logger.debug("[%s]req: %s" % (_service, req.message))
+        session = state.get_session(req.sender())
         state.add_session(session.session_id)
-        _ = session.remember(req_info)
+        _ = session.remember(req)
         sidd = session.sid_digest
     else:
         session = None
@@ -406,45 +414,36 @@ def authn_init(environ, start_response, server_env, state, _debug,
 
     return session, sidd
 
-
-# ----------------------------------------------------------------------------
-
-#noinspection PyUnusedLocal
-def not_found(_environ, start_response):
-    """Called if no URL matches."""
-    start_response('404 NOT FOUND', [('Content-Type', 'text/plain')])
-    return ['Not Found']
-
 # ----------------------------------------------------------------------------
 
 def static_file(server_env, path):
     try:
         os.stat(server_env["STATIC_DIR"]+path)
         return True
-    except os.error:
+    except OSError:
         return False
 
 def metadata_file(server_env, path):
     try:
         os.stat(server_env["METADATA_DIR"]+path)
         return True
-    except os.error:
+    except OSError:
         return False
 
 def static(environ, start_response, path):
     try:
         text = open(path).read()
         if path.endswith(".ico"):
-            start_response('200 OK', [('Content-Type', "image/x-icon")])
+            resp = Response(text, headers=[('Content-Type', "image/x-icon")])
         elif path.endswith(".html"):
-            start_response('200 OK', [('Content-Type', 'text/html')])
+            resp = Response(text, headers=[('Content-Type', 'text/html')])
         elif path.endswith(".txt"):
-            start_response('200 OK', [('Content-Type', 'text/plain')])
+            resp = Response(text, headers=[('Content-Type', 'text/plain')])
         else:
-            start_response('200 OK', [('Content-Type', "text/xml")])
-        return [text]
+            resp = Response(text, headers=[('Content-Type', 'text/xml')])
     except IOError:
-        return not_found(environ, start_response)
+        resp = NotFound()
+    return resp(environ, start_response)
 
 # ----------------------------------------------------------------------------
 #
@@ -476,8 +475,8 @@ def status(environ, start_response, state):
         result.append("</table>")
         result.append("<br>")
 
-    start_response('200 OK', [('Content-Type', 'text/html')])
-    return result
+    resp = Response(result)
+    return resp(environ, start_response)
 
 # ----------------------------------------------------------------------------
 
@@ -502,3 +501,11 @@ def login_attempt(environ):
     return False
 
 # ----------------------------------------------------------------------------
+
+def not_found(environ, start_response):
+    resp = NotFound()
+    return resp(environ, start_response)
+
+def not_authn(environ, start_response):
+    resp = Unauthorized()
+    return resp(environ, start_response)

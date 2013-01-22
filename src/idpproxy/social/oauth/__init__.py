@@ -24,10 +24,10 @@ class OAuth(Social):
         session = server_env["CACHE"][sid]
 
         client = oauth.Client(self.consumer)
-        if self.extra["scope"]:
+        try:
             url = "%s?scope=%s" % (self.extra["request_token_url"],
                                   "+".join(self.extra["scope"]))
-        else:
+        except KeyError:
             url = self.extra["request_token_url"]
 
         logger.debug("Request_token url: %s" % url)

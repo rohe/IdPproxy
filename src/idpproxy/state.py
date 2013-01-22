@@ -198,7 +198,7 @@ class Session(object):
             session_id = self.session_id
 
         until = _expiration(30) # half a hour to log in ?!
-        self._cache.set(self.group, self.session_id, {"req_info": info}, until)
+        self._cache.set(self.group, self.session_id, {"req": info}, until)
         return self.session_id
 
     def __setitem__(self, key, value):
@@ -256,7 +256,7 @@ class Session(object):
 
     def info(self):
         try:
-            return self._cache.get(self.group, self.session_id)["req_info"]
+            return self._cache.get(self.group, self.session_id)["req"]
         except (ValueError, KeyError):
             return None
         

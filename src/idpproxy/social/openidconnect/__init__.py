@@ -115,8 +115,8 @@ class OpenIDConnect(Social):
 
 
         logger.debug("Session: %s" % session)
-        logger.debug("Session_id: %s" % session["req_info"]["id"])
-        _state = copy.copy(session["req_info"]["id"])
+        logger.debug("Session_id: %s" % session["req_info"].message.id)
+        _state = copy.copy(session["req_info"].message.id)
 
         request_args = {
             "response_type": self.flow_type,

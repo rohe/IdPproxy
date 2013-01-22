@@ -1,3 +1,4 @@
+from saml2 import BINDING_SOAP
 from saml2 import BINDING_HTTP_REDIRECT
 from saml2.saml import NAME_FORMAT_URI
 
@@ -13,9 +14,8 @@ CONFIG = {
         "idp": {
             "name" : "SAML proxy IdP",
             "endpoints" : {
-                "single_sign_on_service" : [BASE],
-                "single_logout_service" : [(BASE+"logout",
-                                            BINDING_HTTP_REDIRECT)],
+                "single_sign_on_service" : [(BASE, BINDING_HTTP_REDIRECT)],
+                "single_logout_service" : [(BASE+"logout", BINDING_SOAP)],
             },
             "policy": {
                 "default": {
@@ -32,7 +32,7 @@ CONFIG = {
     "cert_file" : "pki/mycert.pem",
     "xmlsec_binary" : "/opt/local/bin/xmlsec1",
     "metadata" : {
-        "local": ["metadata.xml"],
+        "local": ["test/sp/sp.xml"],
     },
     "organization": {
         "display_name": "Rolands Social proxy",
