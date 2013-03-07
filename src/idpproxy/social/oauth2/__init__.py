@@ -38,7 +38,7 @@ class OAuth2(Social):
                                                "redirect_uri": callback,
                                                "state": state,
                                                "response_type": ["code"],
-                                               "scope":self._scope})
+                                               "scope": self._scope})
         url = ar.request(self.extra["authorization_endpoint"])
         logger.info("[OAuth2] callback url: %s" % url)
         if cookie:

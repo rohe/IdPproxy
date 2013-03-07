@@ -3,12 +3,13 @@
 from saml2 import samlp
 
 import logging
-from saml2.httputil import Response, ServiceError
+from saml2.httputil import Response
 from idpproxy import exception_log
 from idpproxy import err_response
 from idpproxy import do_req_response
 
 logger = logging.getLogger(__name__)
+
 
 class Social(object):
     def __init__(self, client_id, client_secret, social_endpoint=None,
@@ -75,15 +76,15 @@ class Social(object):
                 #(server_env, req_info, response, _environ, source,
                 #session, service="")
                 resp = do_req_response(server_env, req_info, identity,
-                                           environ, auth_auth, session,
-                                           self.extra["entity_id"])
+                                       environ, auth_auth, session,
+                                       self.extra["entity_id"])
                 resp.headers.append(cookie)
                 if _debug:
                     logger.debug("[do_%s] return headers: %s" % (_service,
                                                                  resp.headers))
             else:
                 session["authentication"] = "FAILED"
-                error_info = (samlp.STATUS_AUTHN_FAILED , identity)
+                error_info = (samlp.STATUS_AUTHN_FAILED, identity)
                 resp = err_response(server_env, req_info, error_info)
                 resp.headers.append(cookie)
         else:
@@ -97,7 +98,7 @@ class Social(object):
             return profile
 
         res = {}
-        for key,val in self.attribute_map.items():
+        for key, val in self.attribute_map.items():
             try:
                 if isinstance(val, tuple):
                     pat, param = val
