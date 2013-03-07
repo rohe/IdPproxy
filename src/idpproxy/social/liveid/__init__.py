@@ -1,4 +1,3 @@
-import json
 from idpproxy.social.oauth2 import OAuth2
 
 #from oic.oauth2.message import Message, AccessTokenResponse
@@ -6,14 +5,14 @@ from idpproxy.social.oauth2 import OAuth2
 #from oic.oauth2.message import SINGLE_OPTIONAL_INT
 
 import logging
-from jwkest import unpack
 
 logger = logging.getLogger(__name__)
+
 
 class LiveIDOAuth2(OAuth2):
     def __init__(self, client_id, client_secret, **kwargs):
         OAuth2.__init__(self, client_id, client_secret, **kwargs)
-        self.token_response_body_type="json"
+        self.token_response_body_type = "json"
         #self.access_token_response = AccessTokenResponse
 
 #    def userinfo_endpoint(self, tokenresp):
