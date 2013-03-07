@@ -8,19 +8,21 @@ import time
 import memcache
 
 from Cookie import SimpleCookie
-from saml2 import time_util
 from saml2 import mcache
 from saml2.mcache import ToOld
+from oic.utils import time_util
 import logging
 
 logger = logging.getLogger(__name__)
+
 
 def _expiration(timeout, strformat=None):
     if timeout == "now":
         return time_util.instant(strformat)
     else:
         # validity time should match lifetime of assertions
-        return time_util.in_a_while(minutes=timeout, format=strformat)
+        return time_util.in_a_while(minutes=timeout, time_format=strformat)
+
 
 class State(object):
     def __init__(self, memcached_servers, name, cookie_str="", secret=""):
@@ -154,9 +156,11 @@ class State(object):
 
     def parse_cookie(self, value):
         """Parses and verifies a cookie value """
-        if not value: return None
+        if not value:
+            return None
         parts = value.split("|")
-        if len(parts) != 3: return None
+        if len(parts) != 3:
+            return None
         # verify the cookie signature
         if self.cookie_signature(parts[0], parts[1]) != parts[2]:
             raise Exception("Invalid cookie signature %r", value)
@@ -178,9 +182,10 @@ class State(object):
 def digest(item):
     return hmac.new("1234", item, digestmod=hashlib.sha1).hexdigest()
     
+
 class Session(object):
     """ Knowledge connected to a specific authentication session """
-    def __init__(self, cache, group, session_id = "", secret = ""):
+    def __init__(self, cache, group, session_id="", secret=""):
         self.group = group
         self._cache = cache
         self._secret = secret
@@ -188,7 +193,7 @@ class Session(object):
         self.sid_digest = digest(session_id)
         
     def cache_identity(self, session_id, identity, until):
-        self._cache.update(self.group, session_id, {"ava":identity})
+        self._cache.update(self.group, session_id, {"ava": identity})
         # not_on_or_after = 
         #   self.server.conf.idp_policy().policy.not_on_or_after()
         self._cache.valid_to(self.group, session_id, until)
@@ -197,7 +202,7 @@ class Session(object):
         if not session_id:
             session_id = self.session_id
 
-        until = _expiration(30) # half a hour to log in ?!
+        until = _expiration(30)  # half a hour to log in ?!
         self._cache.set(self.group, self.session_id, {"req": info}, until)
         return self.session_id
 

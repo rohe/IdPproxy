@@ -16,7 +16,7 @@ def _expiration(timeout, strformat=None):
         return time_util.instant(strformat)
     else:
         # validity time should match lifetime of assertions
-        return time_util.in_a_while(minutes=timeout, format=strformat)
+        return time_util.in_a_while(minutes=timeout, time_format=strformat)
 
 class Cache(object):
     def __init__(self, name="", secret="", filename=None):
@@ -63,14 +63,14 @@ class Cache(object):
 
     def known_as(self, kaka):
         logger.info("KAKA: %s" % kaka)
-        id = self.get_id(kaka)
-        if id in self._db:
-            return id
+        sid = self.get_id(kaka)
+        if sid in self._db:
+            return sid
         else:
             return None
 
-    def alternate_sid(self, sid, id):
-        self.alt_id[id] = sid
+    def alternate_sid(self, sid, aid):
+        self.alt_id[aid] = sid
 
 # =============================================================================
 

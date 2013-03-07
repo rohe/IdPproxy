@@ -1,0 +1,55 @@
+To use this proxy you have to do the following:
+
+Let's assume the you want to use Facebook as an authenticator/identity provider.
+How you do other social media is roughly equal.
+
+First you have to get a client id/client secret pair.
+To be able to do this you have to have a user at Facebook.
+I think it's a good idea to create a special new user for this and not
+reuse your own private.
+
+This webside is a pretty good introduction on how to do the registration
+for some different social media.
+
+http://ben.onfabrik.com/posts/oauth-providers#facebook
+
+Doing the registration the return address (redirect/callback URI/domain) has
+to be registered. For this you should use:
+
+https://idp-test.social2saml.org:8090/<social>
+
+That is if you register with Facebook, the redirect URI must be:
+
+http://idp-test.social2saml.org:8090/facebook/
+
+When you've got the id/secret pair you must create a file with the format:
+
+{
+   "Facebook": {
+      "key": "hallon",
+      "secret": "bbbbb"},
+}
+
+This processing below has to be done manually right now.
+Better support will appear in the future.
+
+$ git clone https://github.com/rohe/pyjwkest.git
+$ cd pyjwkest
+$ python setup.py install
+
+Assuming that the file you created above is named 's2s.txt'
+
+$ cat <s2s.txt> | jwenc.py -J <URL> -a 'RSA-OAEP' -e 'A128CBC+HS256' - > s2s.jwe
+
+<URL> = http://idp-test.social2saml.org/idptest.jwk
+
+The resulting file 's2s.jwe' can be mailed to me.
+In the same mail you should state which SPs that should be allowed to use your
+registration.
+
+When I know which social medias you want to use, I'll provide you with an
+URL where you can fetch the metadata.
+
+The eppn you will get are of the form:
+
+<uid>@<social>.social2saml.org

@@ -63,6 +63,7 @@ def local_path(path):
 #        return CONSUMER[social_service]["key"], \
 #               CONSUMER[social_service]["secret"]
 
+
 def auth_choice(path, environ, start_response, sid, server_env):
     """
 
@@ -116,7 +117,7 @@ def auth_choice(path, environ, start_response, sid, server_env):
     else: # This is the SAML endpoint
         # Should I support mote then HTTP redirect
         _dict = unpack_redirect(environ)
-        if _dict == None:
+        if _dict is None:
             return bad_request(environ, start_response, "Request missing")
 
         try:
