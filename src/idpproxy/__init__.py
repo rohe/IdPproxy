@@ -112,6 +112,7 @@ def err_response(server_env, req_info, info,
 
     return Response(**ht_args)
 
+
 def authn_response(server_env, req_info, userid, identity,
                    authn=None, authn_decl=None, service=""):
     # base 64 encoded request
@@ -156,6 +157,7 @@ def authn_response(server_env, req_info, userid, identity,
 
 # -----------------------------------------------------------------------------
 
+
 #noinspection PyUnusedLocal
 def get_eptid(server_env, req_info, identity, session):
 
@@ -163,6 +165,7 @@ def get_eptid(server_env, req_info, identity, session):
     return server_env["eptid"].get(server_env["idp"].config.entityid,
                                     req_info.sender(),
                                     args_)
+
 
 #noinspection PyUnusedLocal
 def do_req_response(server_env, req_info, response, environ, source,
@@ -188,6 +191,7 @@ def do_req_response(server_env, req_info, response, environ, source,
                             authn=(saml.AUTHN_PASSWORD, source),
                             service=service)
 
+
 def do_logout_response(req_info, status=None):
     if status:
         status = s_utils.error_status_factory((status, "Logout failed"))
@@ -195,6 +199,7 @@ def do_logout_response(req_info, status=None):
     return logout_response(req_info, status)
 
 # -----------------------------------------------------------------------------
+
 
 def return_active_info(environ, start_response, server_env, state):
 

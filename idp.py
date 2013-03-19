@@ -80,7 +80,7 @@ def application(environ, start_response):
         _hndl = SERVER_ENV["idp"].config.log_handler()
         _hndl.setFormatter(EXT_FORMATTER)
         _logger.addHandler(_hndl)
-    _logger = logging.LoggerAdapter(_logger, {'sid' : _sid, "remote": _remote})
+    _logger = logging.LoggerAdapter(_logger, {'sid': _sid, "remote": _remote})
     environ["idpproxy.log"] = _logger
 
     # to avoid getting duplicated entries
@@ -232,7 +232,7 @@ if __name__ == '__main__':
     _parser.add_argument('-v', dest='verbose', action='store_true',
                               help="Print runtime information")
     _parser.add_argument('-r', dest="rsa_file",
-                        help="A file containing a RSA key")
+                         help="A file containing a RSA key")
     _parser.add_argument("config", nargs="?", help="Server configuration")
 
     args = _parser.parse_args()

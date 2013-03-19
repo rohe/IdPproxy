@@ -31,7 +31,7 @@ CONFIG = {
     "key_file" : "pki/mykey.pem",
     "cert_file" : "pki/mycert.pem",
     "xmlsec_binary" : "/opt/local/bin/xmlsec1",
-    "metadata" : {
+    "metadata": {
         "local": ["test/sp/sp.xml"],
         },
     "organization": {
