@@ -12,6 +12,7 @@ from saml2.extension.mdattr import EntityAttributes
 import logging
 logger = logging.getLogger(__name__)
 
+
 class Info(object):
     def __init__(self):
         self._ava = {}
@@ -30,6 +31,7 @@ class Info(object):
 
     def __call__(self):
         self.update()
+
 
 class FileInfo(Info):
     def __init__(self, file=file, **kwargs):
@@ -52,6 +54,11 @@ class FileInfo(Info):
             except Exception, err:
                 logger.error("Could not read consumer info file: %s" % err)
 
+
+ENTITY_ATTR = 'urn:oasis:names:tc:SAML:metadata:attribute&EntityAttributes'
+ATTR_NAME = "http://social2saml.nordu.net/customer"
+
+
 class MetadataInfo(Info):
     def __init__(self, dkeys, metad, **kwargs):
         Info.__init__(self)
@@ -64,22 +71,19 @@ class MetadataInfo(Info):
         res = {}
 
         for ent,item in self.metad.items():
-            if "sp_sso" not in item:
+            if "spsso_descriptor" not in item:
                 continue
 
-            for sp in item["sp_sso"]:
+            for sp in item["spsso_descriptor"]:
                 if "extensions" not in sp:
                     continue
 
-                elems = extension_elements_to_elements(
-                                        sp["extensions"]["extension_elements"],
-                                        [mdattr, idpdisc])
-                for elem in elems:
-                    if isinstance(elem, EntityAttributes):
-                        for attr in elem.attribute:
-                            if attr.name == "http://swamid.sunet.se/customer":
-                                for val in attr.attribute_value:
-                                    res[ent] = json.loads(decrypt(val.text,
+                for elem in sp["extensions"]["extension_elements"]:
+                    if elem["__class__"] == ENTITY_ATTR:
+                        for attr in elem["attribute"]:
+                            if attr["name"] == ATTR_NAME:
+                                for val in attr["attribute_value"]:
+                                    res[ent] = json.loads(decrypt(val["text"],
                                                                   self.dkeys,
                                                                   "private"))
 
