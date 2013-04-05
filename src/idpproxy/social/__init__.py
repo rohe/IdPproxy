@@ -25,10 +25,10 @@ class Social(object):
 
     def begin(self, environ, server_env, start_response,
               cookie, sid, info):
-        pass
+        raise NotImplementedError()
 
     def phaseN(self, environ, query, server_env, sid):
-        pass
+        raise NotImplementedError()
 
     #noinspection PyUnusedLocal
     def callback(self, environ, server_env, start_response, cookie,
@@ -50,7 +50,7 @@ class Social(object):
             result = self.phaseN(environ, info, server_env, sid)
             logger.debug("[do_%s] response: %s" % (_service, result))
 
-            if isinstance(session, list): # in process
+            if isinstance(session, list):  # in process
                 start_response(result[0], result[1])
                 return result[2]
 

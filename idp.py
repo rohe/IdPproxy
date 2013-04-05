@@ -19,17 +19,19 @@ from saml2.config import LOG_LEVEL
 
 logger = logging.getLogger("")
 
+
 def setup_logger(conf):
     global logger
 
     try:
         logger.setLevel(LOG_LEVEL[conf.logger["loglevel"].lower()])
-    except KeyError: # reasonable default
+    except KeyError:  # reasonable default
         logger.setLevel(logging.INFO)
 
     logger.addHandler(conf.log_handler())
 
     return logger
+
 
 def session_nr():
     n = 0
@@ -45,9 +47,10 @@ BASE = "/"
 URLS = [
     #(r'logout$', idpproxy.do_logout),
     (r'status$', idpproxy.status),
-    ]
+]
 
 SERVER_ENV = {}
+
 
 def application(environ, start_response):
     """
@@ -64,8 +67,6 @@ def application(environ, start_response):
     global SERVER_ENV
     global EXT_FORMATTER
 
-    _debug = SERVER_ENV["DEBUG"]
-    #_usage = SERVER_ENV["USAGE"]
     path = environ.get('PATH_INFO', '')
 
     logger.debug("ENVIRON: %s" % environ)
@@ -85,7 +86,7 @@ def application(environ, start_response):
 
     # to avoid getting duplicated entries
     _logger.propagate = False
-    _logger.info( "%s %s" % (environ.get("REQUEST_METHOD", ''), path))
+    _logger.info("%s %s" % (environ.get("REQUEST_METHOD", ''), path))
     
     kaka = environ.get("HTTP_COOKIE", '')
     logger.debug("Cookie: %s" % (kaka,))
@@ -102,10 +103,10 @@ def application(environ, start_response):
 
     if idpproxy.static_file(SERVER_ENV, path):
         return idpproxy.static(environ, start_response,
-                               SERVER_ENV["STATIC_DIR"]+path)
+                               SERVER_ENV["STATIC_DIR"] + path)
     elif idpproxy.metadata_file(SERVER_ENV, path):
         return idpproxy.static(environ, start_response,
-                               SERVER_ENV["METADATA_DIR"]+path)
+                               SERVER_ENV["METADATA_DIR"] + path)
     if path == BASE:
         user = environ.get("REMOTE_USER", "")
 #        if not user:
@@ -119,7 +120,7 @@ def application(environ, start_response):
             #return idpproxy.not_found(environ, start_response)
             return idpproxy.not_authn(environ, start_response)
     elif path.startswith("/logo/"):
-        environ['idpproxy.url_args'] = "."+path
+        environ['idpproxy.url_args'] = "." + path
         return idp_srv.logo(environ, start_response, SERVER_ENV)
     elif path == "/logout":
         return idp_srv.logout(environ, start_response, sid, SERVER_ENV)
@@ -143,12 +144,13 @@ LOOKUP = TemplateLookup(directories=[ROOT + 'templates', ROOT + 'htdocs'],
                         module_directory=ROOT + 'modules',
                         input_encoding='utf-8', output_encoding='utf-8')
 
+
 def setup_server_env(proxy_conf, conf_mod, key):
     global SERVER_ENV
     global logger
     #noinspection PyUnboundLocalVariable
-    SERVER_ENV = dict([(k, v) for k,v in proxy_conf.__dict__.items() \
-                                                if not k.startswith("__")])
+    SERVER_ENV = dict([(k, v) for k, v in proxy_conf.__dict__.items()
+                       if not k.startswith("__")])
 
     SERVER_ENV["sessions"] = {}
 
@@ -156,7 +158,7 @@ def setup_server_env(proxy_conf, conf_mod, key):
 
     _idp = server.Server(conf_mod)
 
-    args = {"metad":_idp.metadata, "dkeys":{"rsa": [key]}}
+    args = {"metad": _idp.metadata, "dkeys": {"rsa": [key]}}
 
     SERVER_ENV["consumer_info"] = utils.ConsumerInfo(proxy_conf.CONSUMER_INFO,
                                                      **args)
@@ -167,9 +169,9 @@ def setup_server_env(proxy_conf, conf_mod, key):
     base = "%s://%s/" % (part.scheme, part.netloc)
     SERVER_ENV["SCHEME"] = part.scheme
     try:
-        (host,port) = part.netloc.split(":")
+        (host, port) = part.netloc.split(":")
         port = int(port)
-    except ValueError: # no port specification
+    except ValueError:  # no port specification
         host = part.netloc
         if part.scheme == "http":
             port = 80
@@ -185,7 +187,7 @@ def setup_server_env(proxy_conf, conf_mod, key):
     for key, _dict in proxy_conf.SERVICE.items():
         _sso = _dict["saml_endpoint"]
         endpoints["single_sign_on_service"].append("%s%s" % (base, _sso))
-        endpoints["single_logout_service"].append(("%s%s/logout" % (base,_sso),
+        endpoints["single_logout_service"].append(("%s%s/logout" % (base, _sso),
                                                    BINDING_HTTP_REDIRECT))
 
     _idp.config.setattr("idp", "endpoints", endpoints)
@@ -214,6 +216,7 @@ def setup_server_env(proxy_conf, conf_mod, key):
     logger.debug("SERVER_ENV: %s" % SERVER_ENV)
     return _idp
 
+
 def usage():
     print "Usage: %s configuration_file [-p port][-d][-h]" % sys.argv[0]
     
@@ -228,9 +231,9 @@ if __name__ == '__main__':
 
     _parser = argparse.ArgumentParser()
     _parser.add_argument('-d', dest='debug', action='store_true',
-                              help="Print debug information")
+                         help="Print debug information")
     _parser.add_argument('-v', dest='verbose', action='store_true',
-                              help="Print runtime information")
+                         help="Print runtime information")
     _parser.add_argument('-r', dest="rsa_file",
                          help="A file containing a RSA key")
     _parser.add_argument("config", nargs="?", help="Server configuration")

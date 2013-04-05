@@ -5,10 +5,6 @@ import json
 
 from jwkest.jwe import decrypt
 
-from saml2 import extension_elements_to_elements
-from saml2.extension import mdattr, idpdisc
-from saml2.extension.mdattr import EntityAttributes
-
 import logging
 logger = logging.getLogger(__name__)
 
@@ -34,9 +30,9 @@ class Info(object):
 
 
 class FileInfo(Info):
-    def __init__(self, file=file, **kwargs):
+    def __init__(self, fil=file, **kwargs):
         Info.__init__(self)
-        self.file = file
+        self.file = fil
         self._mtime = 0
         # initial load
         self.update()
