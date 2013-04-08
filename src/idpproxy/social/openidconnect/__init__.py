@@ -1,5 +1,6 @@
 import copy
 import traceback
+from oic.utils.authn import CLIENT_AUTHN_METHOD
 from idpproxy.social import Social
 from oic import oic
 #from oic.oic import consumer
@@ -15,12 +16,13 @@ import sys
 
 logger = logging.getLogger(__name__)
 
+
 def token_secret_key(sid):
     return "token_secret_%s" % sid
 
 SERVICE_NAME = "OIC"
 #CLIENT_REDIRECT_URIS = ["http://lingon.catalogix.se:8091/oic"]
-FLOW_TYPE="code" # or "token"
+FLOW_TYPE = "code" # or "token"
 
 CLIENT_CONFIG = {}
 
@@ -29,6 +31,7 @@ ME = {
     "application_name": "idpproxy",
     "contacts": ["ops@example.com"],
 }
+
 
 class OpenIDConnect(Social):
     def __init__(self, client_id, client_secret, **kwargs):
@@ -46,7 +49,7 @@ class OpenIDConnect(Social):
         try:
             client = server_env["OIC_CLIENT"][self.srv_discovery_url]
         except KeyError:
-            client = self.client_cls()
+            client = self.client_cls(client_authn_method=CLIENT_AUTHN_METHOD)
             client.redirect_uris = [callback]
             _me = ME.copy()
             _me["redirect_uris"] = [callback]
@@ -74,8 +77,9 @@ class OpenIDConnect(Social):
     def static(self, server_env, callback, session):
         try:
             client = server_env["OIC_CLIENT"][self.extra["authorization"]]
+            logger.debug("Static client: %s" % server_env["OIC_CLIENT"])
         except KeyError:
-            client = self.client_cls()
+            client = self.client_cls(client_authn_method=CLIENT_AUTHN_METHOD)
             client.redirect_uris = [callback]
             for typ in ["authorization", "token", "userinfo"]:
                 endpoint = "%s_endpoint" % typ
@@ -83,6 +87,7 @@ class OpenIDConnect(Social):
 
             client.client_id = self.client_id
             client.client_secret = self.client_secret
+            #client.keyjar.add_hmac("", self.client_secret, ["sig", "enc"])
 
         return client
 
@@ -111,8 +116,7 @@ class OpenIDConnect(Social):
         try:
             server_env["OIC_CLIENT"][self.name] = client
         except KeyError:
-            server_env["OIC_CLIENT"]= {self.name: client}
-
+            server_env["OIC_CLIENT"] = {self.name: client}
 
         logger.debug("Session: %s" % session)
         logger.debug("Session_id: %s" % session["req_info"].message.id)
@@ -142,12 +146,12 @@ class OpenIDConnect(Social):
 
         try:
             cis = client.construct_AuthorizationRequest(
-                                                    request_args=request_args)
+                request_args=request_args)
             logger.debug("request: %s" % cis)
 
-            url, body, ht_args, cis = client.uri_and_body(AuthorizationRequest,
-                                                    cis, method="GET",
-                                                    request_args=request_args)
+            url, body, ht_args, cis = client.uri_and_body(
+                AuthorizationRequest, cis, method="GET",
+                request_args=request_args)
             logger.debug("body: %s" % body)
         except Exception:
             message = traceback.format_exception(*sys.exc_info())
@@ -162,7 +166,7 @@ class OpenIDConnect(Social):
 
         resp_headers = [("Location", str(url)), cookie]
         if ht_args:
-            resp_headers.extend([(a,b) for a,b in ht_args.items()])
+            resp_headers.extend([(a, b) for a, b in ht_args.items()])
         logger.debug("resp_headers: %s" % resp_headers)
         start_response("302 Found", resp_headers)
         return []
@@ -172,28 +176,29 @@ class OpenIDConnect(Social):
             issuer = client.provider_info.keys()[0]
             #logger.debug("state: %s (%s)" % (client.state, msg["state"]))
             key = client.keystore.get_verify_key(owner=issuer)
-            kwargs={"key": key}
+            kwargs = {"key": key}
             logger.debug("key: %s" % key)
         else:
-            kwargs = {}
+            kwargs = {"keyjar": client.keyjar}
 
         if self.authn_method:
             kwargs["authn_method"] = self.authn_method
 
         # get the access token
-        return client.do_access_token_request(state=authresp["state"],
-                                        response_cls=self.access_token_response,
-                                        **kwargs)
+        return client.do_access_token_request(
+            state=authresp["state"], response_cls=self.access_token_response,
+            **kwargs)
 
     #noinspection PyUnusedLocal
     def verify_token(self, client, access_token):
         return {}
 
-    def get_userinfo(self, client, authresp, access_token):
+    def get_userinfo(self, client, authresp, access_token, **kwargs):
         # use the access token to get some userinfo
         return client.do_user_info_request(state=authresp["state"],
-                                               schema="openid",
-                                               access_token=access_token)
+                                           schema="openid",
+                                           access_token=access_token,
+                                           **kwargs)
 
     #noinspection PyUnusedLocal
     def phaseN(self, environ, info, server_env, sid):
@@ -202,8 +207,11 @@ class OpenIDConnect(Social):
         approved."""
 
         client = server_env["OIC_CLIENT"][self.name]
+        logger.debug("info: %s" % info)
+        logger.debug("keyjar: %s" % client.keyjar)
+
         authresp = client.parse_response(AuthorizationResponse, info,
-                                         format="dict")
+                                         sformat="dict")
 
         session = server_env["CACHE"][sid]
         if isinstance(authresp, ErrorResponse):
@@ -218,12 +226,13 @@ class OpenIDConnect(Social):
             # get the access token
             try:
                 tokenresp = self.get_accesstoken(client, authresp)
-            except Exception,err:
+            except Exception, err:
                 logger.error("%s" % err)
                 raise
 
             if isinstance(tokenresp, ErrorResponse):
-                return False, "Invalid response %s." % tokenresp["error"], session
+                return (False, "Invalid response %s." % tokenresp["error"],
+                        session)
 
             access_token = tokenresp["access_token"]
         else:
