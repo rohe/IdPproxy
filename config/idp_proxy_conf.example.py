@@ -68,7 +68,7 @@ SERVICE = {
         "request_token_url": 'http://api.twitter.com/oauth/request_token',
         "token_endpoint": 'http://api.twitter.com/oauth/access_token',
         "authorization_endpoint": 'http://api.twitter.com/oauth/authorize',
-        "class":Twitter,
+        "class": Twitter,
         "attribute_map": {
             "eduPersonPrincipalName": ("%s@twitter.com", "screen_name"),
             "displayName": "screen_name",

@@ -32,15 +32,18 @@ logger = logging.getLogger(__name__)
 
 # ----------------------------------------------------------------------------
 
+
 #noinspection PyUnusedLocal
 def NOT_AUTHN(environ, start_response, state, req_info):
     return bad_request(environ, start_response, "Unimplemented")
 
 # ----------------------------------------------------------------------------
 
+
 def exception_log():
     for line in traceback.format_exception(*sys.exc_info()):
         logger.info("## %s" % line.strip("\n"))
+
 
 def cgi_field_storage_to_dict( field_storage ):
     """Get a plain dictionary, rather than the '.value' system used by the
@@ -57,6 +60,7 @@ def cgi_field_storage_to_dict( field_storage ):
     return params
 
 # ----------------------------------------------------------------------------
+
 
 #noinspection PyUnusedLocal
 def logout_response(server_env, req_info, status=None):
@@ -83,6 +87,7 @@ def logout_response(server_env, req_info, status=None):
                                  response=True)
 
     return Response(**ht_args)
+
 
 def err_response(server_env, req_info, info,
                  endpoint="assertion_consumer_service"):
