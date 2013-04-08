@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 SCOPES = ["https://www.googleapis.com/auth/userinfo.profile",
           "https://www.googleapis.com/auth/userinfo.email"]
 
+
 # According to an earlier version of OpenID Connect
 class GoogleAccessTokenResponse(Message):
     c_param = {
@@ -23,25 +24,40 @@ class GoogleAccessTokenResponse(Message):
         "id_token": SINGLE_OPTIONAL_STRING
     }
 
+
 # The validation messages also old OIC
 class ValidationRequest(Message):
     c_param = {
         "access_token": SINGLE_REQUIRED_STRING,
-        }
+    }
+
 
 class ValidationResponse(Message):
     c_param = {
         "audience": SINGLE_REQUIRED_STRING,
         "user_id": SINGLE_REQUIRED_STRING,
         "scope": OPTIONAL_LIST_OF_SP_SEP_STRINGS,
-        "expires_in":SINGLE_OPTIONAL_INT
-        }
+        "expires_in": SINGLE_OPTIONAL_INT
+    }
+
+
+class GoogleInfoSchema(Message):
+    c_param = {
+        "id": SINGLE_REQUIRED_STRING,
+        "email": SINGLE_OPTIONAL_STRING,
+        "name": SINGLE_OPTIONAL_STRING,
+        "given_name": SINGLE_OPTIONAL_STRING,
+        "family_name": SINGLE_OPTIONAL_STRING,
+    }
+
 
 class Client(oic_Client):
 
     def construct_ValidationRequest(self, request_args=None, extra_args=None,
                                     **kwargs):
-        return self.construct_request(ValidationRequest, request_args, extra_args)
+        return self.construct_request(ValidationRequest, request_args,
+                                      extra_args)
+
 
 class GoogleOIC(OpenIDConnect):
     def __init__(self, client_id, client_secret, **kwargs):
@@ -60,12 +76,13 @@ class GoogleOIC(OpenIDConnect):
         logger.info("Verification result: %s" % resp.to_json())
         return resp.to_dict()
 
-    def get_userinfo(self, client, authresp, access_token):
+    def get_userinfo(self, client, authresp, access_token, **kwargs):
         return client.do_user_info_request(method="GET",
                                            state=authresp["state"],
                                            schema="openid",
                                            token=access_token,
-                                           behavior="use_authorization_header")
+                                           behavior="use_authorization_header",
+                                           user_info_schema=GoogleInfoSchema)
 
     def eppn_from_mail(self, mail):
         loc,dom = mail.split("@")
