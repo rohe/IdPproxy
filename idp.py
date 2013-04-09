@@ -7,6 +7,7 @@ import idpproxy
 
 from idpproxy import idp_srv
 from idpproxy import utils
+from idpproxy.metadata.secret import MetadataGeneration
 
 from saml2 import server
 from saml2 import BINDING_HTTP_REDIRECT
@@ -124,6 +125,8 @@ def application(environ, start_response):
         return idp_srv.logo(environ, start_response, SERVER_ENV)
     elif path == "/logout":
         return idp_srv.logout(environ, start_response, sid, SERVER_ENV)
+    elif generateMetadata is not None and generateMetadata.verifyHandleRequest(path):
+        return generateMetadata.handleRequest(environ, start_response, path)
     else:
         environ['idpproxy.url_args'] = ""
         return idp_srv.auth_choice(path, environ, start_response, sid,
@@ -236,6 +239,8 @@ if __name__ == '__main__':
                          help="Print runtime information")
     _parser.add_argument('-r', dest="rsa_file",
                          help="A file containing a RSA key")
+    _parser.add_argument('-p', dest="rsa_public_file",
+                         help="A file containing a public RSA key")
     _parser.add_argument("config", nargs="?", help="Server configuration")
 
     args = _parser.parse_args()
@@ -244,6 +249,12 @@ if __name__ == '__main__':
         key = rsa_load(args.rsa_file)
     else:
         key = None
+
+    if args.rsa_file and args.rsa_public_file:
+        generateMetadata = MetadataGeneration(logger,
+                                              idp_proxy_conf.SERVICE,
+                                              args.rsa_public_file,
+                                              [{"local": ["swamid-1.0.xml"]}, {"local": ["sp.xml"]}])
 
     #noinspection PyUnboundLocalVariable
     _idp = setup_server_env(idp_proxy_conf, args.config, key)

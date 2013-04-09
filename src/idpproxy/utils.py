@@ -79,10 +79,16 @@ class MetadataInfo(Info):
                         for attr in elem["attribute"]:
                             if attr["name"] == ATTR_NAME:
                                 for val in attr["attribute_value"]:
-                                    res[ent] = json.loads(decrypt(val["text"],
-                                                                  self.dkeys,
-                                                                  "private"))
-
+                                    try:
+                                        socialsecrets = json.loads(decrypt(val["text"],
+                                                                           self.dkeys,
+                                                                           "private"))
+                                        if "entityId" in socialsecrets and ent in socialsecrets["entityId"]:
+                                            if "secret" in socialsecrets:
+                                                res[ent] = socialsecrets["secret"]
+                                    except Exception as exp:
+                                        logger.warning('The secrets in the metadata cannot med used for the sp: ' + ent,
+                                                       exc_info=True)
         self._ava.update(res)
 
 

@@ -1,3 +1,5 @@
+import cgi
+
 __author__ = 'Hans Hoerberg - Copyright 2013 Umea Universitet'
 import re
 import os
@@ -122,10 +124,19 @@ class MetadataGeneration(object):
         :param environ: The wsgi enviroment.
         :return: A dictionary with query parameters.
         """
-        query = environ.get('s2repoze.body', ' ')
+        qs = {}
+        query = environ.get("QUERY_STRING", "")
         if not query:
-            query = environ.get("QUERY_STRING", "")
-        qs = dict((k, v if len(v) > 1 else v[0]) for k, v in parse_qs(query).iteritems())
+            post_env = environ.copy()
+            post_env['QUERY_STRING'] = ''
+            query = cgi.FieldStorage(fp=environ['wsgi.input'], environ=post_env, keep_blank_values=True)
+            if query is not None:
+                for item in query:
+                    qs[query[item].name] = query[item].value
+        else:
+            qs = dict((k, v if len(v) > 1 else v[0]) for k, v in parse_qs(query).iteritems())
+
+
         return qs
 
     def handleRequest(self, environ, start_response, path):

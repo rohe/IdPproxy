@@ -205,7 +205,6 @@
         $("select option").remove();
         $('#secrettmp').val('');
         $('#keytmp').val('');
-        $('html').remove(); //Delete all! :)
         spHash = {}
         secretHash = {}
     }

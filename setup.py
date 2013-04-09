@@ -4,7 +4,7 @@ __author__ = 'rolandh'
 
 setup(
         name="idpproxy",
-        version="0.2.0",
+        version="0.2.1",
         description="Proxy between social services and SAML2",
         author="Roland Hedberg",
         author_email="roland.hedberg@adm.umu.se",
