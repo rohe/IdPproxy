@@ -16,6 +16,7 @@ from idpproxy import eptid
 from idpproxy import cache
 
 from jwkest.jwk import rsa_pub_load, rsa_priv_to_pub
+from importlib import import_module
 
 # ----------------------------------------------------------------------------
 from saml2.config import LOG_LEVEL
@@ -258,11 +259,12 @@ if __name__ == '__main__':
         _key = rsa_pub_load(args.rsa_public_file)
     else:
         _key = None
-
+    idp_conf = import_module(args.config)
+    metadata = idp_conf.CONFIG["metadata"]
     if _key:
         generateMetadata = MetadataGeneration(
             logger, idp_proxy_conf.SERVICE, _key,
-            [{"local": ["metadata/swamid-2.0.xml"]}])
+            [metadata])
 
     #noinspection PyUnboundLocalVariable
     _idp = setup_server_env(idp_proxy_conf, args.config, key)
