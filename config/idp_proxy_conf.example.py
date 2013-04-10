@@ -20,7 +20,7 @@ CACHE = "memory"
 EPTID_DB = "eptid.db"
 
 # debugging or not
-DEBUG=True
+DEBUG = True
 
 DOMAIN = "social2saml.org"
 STATIC_DIR = "static/"
@@ -33,19 +33,21 @@ CONSUMER_INFO = ["file:config/secrets", "metadata"]
 
 # ------- HTTPS -------
 # These should point to relevant files
-SERVER_CERT= ""
-SERVER_KEY=""
+SERVER_CERT = ""
+SERVER_KEY = ""
 # This is of course the certificate chain for the CA that signed
 # you cert and all the way up to the top
-CERT_CHAIN=""
+CERT_CHAIN = ""
 # ------- HTTPS -------
+
+PAYPAL = "https://www.paypal.com/webapps/auth/protocol/openidconnect/v1"
 
 # SAML endpoint, Social protocol endpoint, protocol handler class
 SERVICE = {
-    "facebook":{
-        "saml_endpoint":"facebook_sso",
-        "social_endpoint":"facebook",
-        "class":FacebookOAuth2,
+    "facebook": {
+        "saml_endpoint": "facebook_sso",
+        "social_endpoint": "facebook",
+        "class": FacebookOAuth2,
         "authenticating_authority": 'https://graph.facebook.com/oauth/',
         "token_endpoint": "https://graph.facebook.com/oauth/access_token",
         "authorization_endpoint": 'https://graph.facebook.com/oauth/authorize',
@@ -61,9 +63,9 @@ SERVICE = {
         },
         "name": "Facebook",
     },
-    "twitter":{
-        "saml_endpoint":"twitter_sso",
-        "social_endpoint":"twitter",
+    "twitter": {
+        "saml_endpoint": "twitter_sso",
+        "social_endpoint": "twitter",
         "authenticating_authority": 'http://api.twitter.com/oauth/',
         "request_token_url": 'http://api.twitter.com/oauth/request_token',
         "token_endpoint": 'http://api.twitter.com/oauth/access_token',
@@ -73,12 +75,12 @@ SERVICE = {
             "eduPersonPrincipalName": ("%s@twitter.com", "screen_name"),
             "displayName": "screen_name",
             "uid": "user_id",
-            },
+        },
         "name": "Twitter",
     },
     "google": {
-        "saml_endpoint":"google_sso",
-        "social_endpoint":"google",
+        "saml_endpoint": "google_sso",
+        "social_endpoint": "google",
         "authenticating_authority": "https://www.google.com/accounts/o8/id", # No completely true but ..
         "authorization_endpoint": "https://accounts.google.com/o/oauth2/auth",
         "token_endpoint": "https://accounts.google.com/o/oauth2/token",
@@ -89,24 +91,24 @@ SERVICE = {
         "attribute_map": {
             "uid": "id",
             #"email": "email", # OID 1.2.840.113549.1.9.1
-            "mail": "email", # OID 0.9.2342.19200300.100.1.3
+            "mail": "email",  # OID 0.9.2342.19200300.100.1.3
             #"verified_email": true,
             "displayName": "name",
             "givenName": "given_name",
             "surname": "family_name",
         },
-        "class":GoogleOIC,
+        "class": GoogleOIC,
         "name": "Google",
     },
-    "fallthrough":{ # Just for testing
-        "saml_endpoint":"fallthrough_sso",
-        "social_endpoint":"fallthrough",
-        "class":FallTrough,
+    "fallthrough": {  # Just for testing
+        "saml_endpoint": "fallthrough_sso",
+        "social_endpoint": "fallthrough",
+        "class": FallTrough,
         "variable": "session_id",
         "attribute_map": None,
         "name": "Fallthrough",
     },
-    "roland":{
+    "roland": {
         "saml_endpoint": "oic_sso",
         "social_endpoint": "oic",
         "class": OpenIDConnect,
@@ -119,7 +121,7 @@ SERVICE = {
             "displayName": "name",
             "uid": "user_id",
             #"email": "email", # OID 1.2.840.113549.1.9.1
-            "mail": "email", # OID 0.9.2342.19200300.100.1.3
+            "mail": "email",  # OID 0.9.2342.19200300.100.1.3
             "given_name": "given_name",
             "surname": "family_name"
         }
@@ -141,17 +143,17 @@ SERVICE = {
             "displayName": "name",
             "givenName": "first_name",
             "surname": "last_name",
-            },
+        },
     },
     "linkedin":{
-        "saml_endpoint":"linkedin_sso",
-        "social_endpoint":"linkedin",
+        "saml_endpoint": "linkedin_sso",
+        "social_endpoint": "linkedin",
         "authenticating_authority": 'http://api.linkedin.com/oauth/',
         "request_token_url": 'https://api.linkedin.com/uas/oauth/requestToken',
         "token_endpoint": 'https://api.linkedin.com/uas/oauth/accessToken',
         "userinfo_endpoint": "http://api.linkedin.com/v1/people/~?format=json",
         "authorization_endpoint": 'https://www.linkedin.com/uas/oauth/authenticate',
-        "class":LinkedIn,
+        "class": LinkedIn,
         "scope": ["r_basicprofile", "r_emailaddress"],
         "attribute_map": {
             #"eduPersonPrincipalName": ("%s@linkedin.com", "user_id"),
@@ -163,21 +165,23 @@ SERVICE = {
         },
     # !!! Doesn't work yet !!!
     "paypal": {
-        "saml_endpoint":"paypal_sso",
-        "social_endpoint":"paypal",
-        "authenticating_authority": "https://www.paypal.com/webapps/auth/protocol/openidconnect/v1",
-        "authorization_endpoint": "https://www.paypal.com/webapps/auth/protocol/openidconnect/v1/authorize",
-        "token_endpoint": "https://www.paypal.com/webapps/auth/protocol/openidconnect/v1/tokenservice",
-        "userinfo_endpoint": "https://www.paypal.com/webapps/auth/protocol/openidconnect/v1/userinfo",
+        "saml_endpoint": "paypal_sso",
+        "social_endpoint": "paypal",
+        "authenticating_authority": PAYPAL,
+        "authorization_endpoint": "%s/authorize" % PAYPAL,
+        "token_endpoint": "%s/tokenservice" % PAYPAL,
+        "userinfo_endpoint": "%s/userinfo" % PAYPAL,
         "scope": ["openid", "profile", "email"],
         "attribute_map": {
             "uid": "uid",
             "email": "email",
             #"verified_email": true,
             "displayName": "full_name",
-            },
-        "class":PayPal,
-        "name": "Paypal",
         },
+        "class": PayPal,
+        "name": "Paypal",
+    },
+}
 
-    }
+for key, val in SERVICE.items():
+    val["entity_id"] = "%s.xml" %key
