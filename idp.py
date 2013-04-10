@@ -15,6 +15,8 @@ from saml2 import BINDING_HTTP_REDIRECT
 from idpproxy import eptid
 from idpproxy import cache
 
+from jwkest.jwk import rsa_pub_load, rsa_priv_to_pub
+
 # ----------------------------------------------------------------------------
 from saml2.config import LOG_LEVEL
 
@@ -250,11 +252,17 @@ if __name__ == '__main__':
     else:
         key = None
 
-    if args.rsa_file and args.rsa_public_file:
-        generateMetadata = MetadataGeneration(logger,
-                                              idp_proxy_conf.SERVICE,
-                                              args.rsa_public_file,
-                                              [{"local": ["swamid-1.0.xml"]}, {"local": ["sp.xml"]}])
+    if args.rsa_file:
+        _key = rsa_priv_to_pub(args.rsa_file)
+    elif args.rsa_public_file:
+        _key = rsa_pub_load(args.rsa_public_file)
+    else:
+        _key = None
+
+    if _key:
+        generateMetadata = MetadataGeneration(
+            logger, idp_proxy_conf.SERVICE, _key,
+            [{"local": ["metadata/swamid-2.0.xml"]}])
 
     #noinspection PyUnboundLocalVariable
     _idp = setup_server_env(idp_proxy_conf, args.config, key)
