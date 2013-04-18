@@ -72,6 +72,10 @@ form {
     text-align: right;
 }
 
+form.big {
+    width: 100%;
+}
+
 .description {
     font-style: italic;
 }
@@ -89,4 +93,5 @@ textarea {
     border:none;
     background-color: lightgray;
     width: 100%;
+    resize: none;
 }
