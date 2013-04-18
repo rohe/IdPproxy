@@ -1,5 +1,9 @@
 <%inherit file="root.mako"/>
 <script>
+    /**
+     * Verifies the xml in the form xmlForm with a REST call.
+     * @param msg The JSON respons from the REST service.
+     */
     function verifyResponse(msg) {
         if (msg.ok == "True") {
             services = "";

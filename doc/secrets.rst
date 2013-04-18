@@ -67,3 +67,11 @@ Here we expect the following:
 5. The SP metadata with the included EntityAttributes structure is sent to the
     IdPproxy. It will read the info, decypt the JWT and store away the information
     to be used later when the SP wants to use a social service.
+
+The IdP proxy comes with a web application tool that will generate the
+EntityAttributes structure for a set of given service providers and social services.
+The tool also includes a metadata verification that can be used to verify that
+the EntityAttribute is included correctly in the metadata.
+
+For metadata generation:   http://myProxyIdpIP:port/metadata
+For metadata verification: http://myProxyIdpIP:port/metadata/verify

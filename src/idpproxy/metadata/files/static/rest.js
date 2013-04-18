@@ -1,3 +1,14 @@
+/*
+This file contains all REST-calls performed.
+ */
+
+/**
+ * General method that submits a form to a REST service instead of a web page.
+ * @param formId Id for the form.
+ * @param callback A callback function that will be called with the return json message.
+ * @param errorMessage A error to be presented when the call is not successfull.
+ * @param buttonText Text for the button.
+ */
 function submitForm(formId, callback, errorMessage, buttonText) {
     tmpForm=$('#'+formId).serializeJSON()
     url = $('#'+formId).attr('action')

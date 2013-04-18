@@ -300,9 +300,7 @@ class MetadataGeneration(object):
 
     def handleMetadataVerify(self, environ, start_response, qs):
         """
-        Takes the input for the page metadata.mako.
-        Encrypts entity id and secret information for the social services.
-        Creates the partial xml to be added to the metadata for the service provider.
+        Will show the page for metadata verification (metadataverify.mako).
         :param environ: wsgi enviroment
         :param start_response: wsgi start respons
         :param qs: Query parameters in a dictionary.
@@ -319,16 +317,15 @@ class MetadataGeneration(object):
 
     def handleMetadataVerifyJson(self, environ, start_response, qs):
         """
-        Takes the input for the page metadata.mako.
-        Encrypts entity id and secret information for the social services.
-        Creates the partial xml to be added to the metadata for the service provider.
+        Handles JSON metadata verifications.
+        The post body must contains a JSON message like { 'xml' : 'a metadata file'}
         :param environ: wsgi enviroment
         :param start_response: wsgi start respons
         :param qs: Query parameters in a dictionary.
-        :return: wsgi response for the mako file metadatasave.mako.
+        :return: wsgi response contaning a JSON response. The JSON message will contain the parameter ok and services.
+                ok will contain true if the metadata file can be parsed, otherwise false.
+                services will contain a list of all the service names contained in the metadata file.
         """
-
-
         ok = False
         services = "[]"
         try:

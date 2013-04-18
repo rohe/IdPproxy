@@ -1,3 +1,11 @@
+/*
+ * Contains functionality to present HTML popups.
+ */
+
+/**
+ * Will cover the browser with a div so the user must close the popup before taking any actions.
+ * Will position the popup in the middle of the browser window.
+ */
 function setupPopup() {
     paddingX = 40;
     paddingY = 40;
@@ -7,16 +15,22 @@ function setupPopup() {
     $('#popup').css("margin-left",marginLeft+'px');
     $('#popup').css("margin-top",marginTop+'px');
     buttonLeft = ($('#popup').width() / 2) - ($('#popupClose').width() / 2) + parseInt($('#popup').css('padding-left'));
-    //buttonTop = ($('#popup').height()) - ($('#popupClose').height()) + parseInt($('#popup').css('padding'));
     $('#popupClose').css('margin-left', buttonLeft+'px');
-    //$('#popupClose').css("top",buttonTop+'px');
 }
 
+/**
+ * Will close the current popup.
+ */
 function closePopup() {
     $('#popup').hide();
     $('#popupBackground').hide();
 }
 
+/**
+ * Will present a popup to the user.
+ * @param text The text to show the user. This can actually contain any html.
+ * @param buttonText Text for the button.
+ */
 function viewPopup(text, buttonText) {
     $('#popupClose').val(buttonText);
     $('#popupText').html(text);
@@ -25,6 +39,9 @@ function viewPopup(text, buttonText) {
     $('#popupBackground').show();
 }
 
+/**
+ * Will generate the html needed on a page to show the popup.
+ */
 function initPopup() {
     $('body').append("<div id='popupBackground'></div>");
     $('body').append("<div id='popup'>" +
