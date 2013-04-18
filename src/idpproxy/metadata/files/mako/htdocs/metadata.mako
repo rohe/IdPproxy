@@ -209,7 +209,7 @@
         secretHash = {}
     }
 </script>
-
+<h2>&nbsp;&nbsp;&nbsp;&nbsp;- Generate</h2>
 <p class="description">
     You can use this tool if you want to include social service credentials in your metadata file.
     All information will be encrypted with the public key for Social2Saml and included in an EntityAttributes XML element.
@@ -217,6 +217,7 @@
     for the social services. You can either use the list or add them manually.
     Then you have to add key and secret for each social service you which to use for your service provider(s).
     Follow the guide at <a href="https://portal.nordu.net/display/SWAMID/Social2SAML">SWAMID</a> to retrieve secret and key for the social service you which to configure.<br />
+    You can validate that your social services are include in the metadata file <a href="${verify}">here.</a><br />
 </p>
 
     <table style="width:100%">
