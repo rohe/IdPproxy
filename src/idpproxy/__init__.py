@@ -45,16 +45,16 @@ def exception_log():
         logger.info("## %s" % line.strip("\n"))
 
 
-def cgi_field_storage_to_dict( field_storage ):
+def cgi_field_storage_to_dict(field_storage):
     """Get a plain dictionary, rather than the '.value' system used by the
     cgi module."""
 
     params = {}
     for key in field_storage.keys():
         try:
-            params[ key ] = field_storage[ key ].value
+            params[key] = field_storage[key].value
         except AttributeError:
-            if isinstance(field_storage[ key ], basestring):
+            if isinstance(field_storage[key], basestring):
                 params[key] = field_storage[key]
 
     return params
@@ -77,7 +77,6 @@ def logout_response(server_env, req_info, status=None):
     else:
         bindings = [BINDING_SOAP]
         destination = ""
-
 
     response = _idp.create_logout_response(req_info.message, bindings,
                                            status, sign=server_env["SIGN"])
@@ -165,11 +164,9 @@ def authn_response(server_env, req_info, userid, identity,
 
 #noinspection PyUnusedLocal
 def get_eptid(server_env, req_info, identity, session):
-
     args_ = (session["permanent_id"], [session["authn_auth"]])
     return server_env["eptid"].get(server_env["idp"].config.entityid,
-                                    req_info.sender(),
-                                    args_)
+                                   req_info.sender(), args_)
 
 
 #noinspection PyUnusedLocal
@@ -181,7 +178,7 @@ def do_req_response(server_env, req_info, response, environ, source,
 
     identity = response
     if identity:
-        userid = identity["uid"] #
+        userid = identity["uid"]
         if "eduPersonTargetedID" not in identity:
             identity["eduPersonTargetedID"] = get_eptid(server_env, req_info,
                                                         identity, session)
@@ -193,8 +190,7 @@ def do_req_response(server_env, req_info, response, environ, source,
     session["identity"] = identity
     session["eptid"] = identity["eduPersonTargetedID"]
     return authn_response(server_env, req_info, userid, identity,
-                            authn=(saml.AUTHN_PASSWORD, source),
-                            service=service)
+                          authn=(saml.AUTHN_PASSWORD, source), service=service)
 
 
 def do_logout_response(req_info, status=None):
@@ -216,7 +212,8 @@ def return_active_info(environ, start_response, server_env, state):
         resp = BadRequest("Don't know the SP that referred you here")
         return resp(environ, start_response)
     except UnsupportedBinding:
-        resp = BadRequest("Don't know how to reply to the SP that referred you here")
+        resp = BadRequest(
+            "Don't know how to reply to the SP that referred you here")
         return resp(environ, start_response)
     except Exception:
         resp = BadRequest("Exception while parsing the AuthnRequest")
@@ -230,7 +227,7 @@ def return_active_info(environ, start_response, server_env, state):
     if req_info:
         session = state.old_session(req_info.sender())
         if session:
-            if req_info.message.force_authn: # even if active session
+            if req_info.message.force_authn:  # even if active session
                 session.reset()
                 session["req_info"] = req_info
                 start_response("302 Found", [("Location", "/")])
@@ -238,13 +235,11 @@ def return_active_info(environ, start_response, server_env, state):
 
             identity = session["identity"]
             if not identity:
-                return NOT_AUTHN(environ, start_response, state,
-                                    req_info)
+                return NOT_AUTHN(environ, start_response, state, req_info)
         if not session or not session.active():
             return NOT_AUTHN(environ, start_response, state, req_info)
     else:
         return NOT_AUTHN(environ, start_response, state, req_info)
-
 
     logger.debug("[return_active_info] Old session: %s" % session)
     identity = session["identity"]
@@ -283,7 +278,7 @@ def do_logout(environ, start_response, server_env, state):
 
     try:
         request = _dict["SAMLRequest"]
-    except:
+    except KeyError:
         resp = BadRequest("Request missing")
         return resp(environ, start_response)
 
@@ -327,6 +322,7 @@ def authentication_state(info):
     except KeyError:
         return ""
 
+
 def get_session_id(environ):
     try:
         parres = urlparse.urlparse(environ["HTTP_REFERER"])
@@ -336,9 +332,11 @@ def get_session_id(environ):
         qdict = parse_qs(environ["QUERY_STRING"])
         return qdict["sessionid"][0]
 
+
 def bad_request(environ, start_response, msg):
     resp = BadRequest(msg)
     return resp(environ, start_response)
+
 
 #noinspection PyUnusedLocal
 def base(environ, start_response, _user):
@@ -346,6 +344,7 @@ def base(environ, start_response, _user):
     return resp(environ, start_response)
 
 # =============================================================================
+
 
 def get_authn_request(environ, server_env):
     """
@@ -363,7 +362,6 @@ def get_authn_request(environ, server_env):
 
     if not _dict:
         return None
-
 
     req = _dict["SAMLRequest"]
     logger.debug("[get_authn_request] query: %s" % req)
@@ -388,6 +386,7 @@ def get_authn_request(environ, server_env):
             raise
 
     return None
+
 
 #noinspection PyUnusedLocal
 def authn_init(environ, start_response, server_env, state, _debug,
@@ -426,6 +425,7 @@ def authn_init(environ, start_response, server_env, state, _debug,
 
 # ----------------------------------------------------------------------------
 
+
 def static_file(server_env, path):
     try:
         os.stat(server_env["STATIC_DIR"]+path)
@@ -433,12 +433,14 @@ def static_file(server_env, path):
     except OSError:
         return False
 
+
 def metadata_file(server_env, path):
     try:
         os.stat(server_env["METADATA_DIR"]+path)
         return True
     except OSError:
         return False
+
 
 def static(environ, start_response, path):
     try:
@@ -457,6 +459,8 @@ def static(environ, start_response, path):
 
 # ----------------------------------------------------------------------------
 #
+
+
 def _dict_to_table(dic, border=""):
     result = ["<table border=\"%s\">" % border]
     for key, val in dic.items():
@@ -465,6 +469,7 @@ def _dict_to_table(dic, border=""):
     return "\n".join(result)
 
 SOCIAL_SRV = ["twitter", "openid", "google", "facebook", "liveid"]
+
 
 #noinspection PyUnusedLocal
 def status(environ, start_response, state):
@@ -490,6 +495,7 @@ def status(environ, start_response, state):
 
 # ----------------------------------------------------------------------------
 
+
 def active_session(session):
     try:
         info = session.get()
@@ -499,6 +505,7 @@ def active_session(session):
         pass
 
     return False
+
 
 def login_attempt(environ):
     try:
@@ -512,9 +519,11 @@ def login_attempt(environ):
 
 # ----------------------------------------------------------------------------
 
+
 def not_found(environ, start_response):
     resp = NotFound()
     return resp(environ, start_response)
+
 
 def not_authn(environ, start_response):
     resp = Unauthorized()
