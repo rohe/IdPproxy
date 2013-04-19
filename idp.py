@@ -12,7 +12,8 @@ from idpproxy.metadata.secret import MetadataGeneration
 from saml2 import server
 from saml2 import BINDING_HTTP_REDIRECT
 
-from idpproxy import eptid
+from saml2.eptid import EptidShelve
+
 from idpproxy import cache
 
 from jwkest.jwk import rsa_pub_load, rsa_priv_to_pub
@@ -128,7 +129,8 @@ def application(environ, start_response):
         return idp_srv.logo(environ, start_response, SERVER_ENV)
     elif path == "/logout":
         return idp_srv.logout(environ, start_response, sid, SERVER_ENV)
-    elif generateMetadata is not None and generateMetadata.verifyHandleRequest(path):
+    elif generateMetadata is not None and generateMetadata.verifyHandleRequest(
+            path):
         return generateMetadata.handleRequest(environ, start_response, path)
     else:
         environ['idpproxy.url_args'] = ""
@@ -160,7 +162,7 @@ def setup_server_env(proxy_conf, conf_mod, key):
 
     SERVER_ENV["sessions"] = {}
 
-    SERVER_ENV["eptid"] = eptid.Eptid(proxy_conf.EPTID_DB, proxy_conf.SECRET)
+    SERVER_ENV["eptid"] = EptidShelve(proxy_conf.SECRET, proxy_conf.EPTID_DB)
 
     _idp = server.Server(conf_mod)
 
@@ -263,8 +265,8 @@ if __name__ == '__main__':
     metadata = idp_conf.CONFIG["metadata"]
     if _key:
         generateMetadata = MetadataGeneration(
-            logger, idp_proxy_conf.SERVICE, _key,
-            [metadata])
+            logger, idp_proxy_conf.SERVICE, publicKey=_key, privateKey=key,
+            metadataList=[metadata])
 
     #noinspection PyUnboundLocalVariable
     _idp = setup_server_env(idp_proxy_conf, args.config, key)
