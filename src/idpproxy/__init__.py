@@ -164,9 +164,9 @@ def authn_response(server_env, req_info, userid, identity,
 
 #noinspection PyUnusedLocal
 def get_eptid(server_env, req_info, identity, session):
-    args_ = (session["permanent_id"], [session["authn_auth"]])
+    args_ = [session["permanent_id"], session["authn_auth"]]
     return server_env["eptid"].get(server_env["idp"].config.entityid,
-                                   req_info.sender(), args_)
+                                   req_info.sender(), *args_)
 
 
 #noinspection PyUnusedLocal
@@ -482,7 +482,7 @@ def status(environ, start_response, state):
                 break
 
         result.append("<table border=\"1\">")
-        for prop in ["authentication", "authn_auth", "identity"]:
+        for prop in ["authentication", "identity"]:
             val = session[prop]
             if isinstance(val, dict):
                 val = _dict_to_table(val)
