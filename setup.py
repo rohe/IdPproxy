@@ -31,9 +31,15 @@ setup(
     zip_safe=False,
     data_files=[
         ("%s/mako/htdocs" % TARGET, ["%s/metadata.mako" % HTDOCS,
+                                     "%s/metadataverify.mako" % HTDOCS,
                                      "%s/metadatasave.mako" % HTDOCS]),
         ("%s/mako/templates" % TARGET, ["%s/root.mako" % TEMPL]),
-        ("%s/static" % TARGET, ["%s/style.css" % STAT,
+        ("%s/static" % TARGET, ["%s/jquery.min.1.9.1.js" % STAT,
+                                "%s/popup.css" % STAT,
+                                "%s/popup.js" % STAT,
+                                "%s/rest.js" % STAT,
+                                "%s/serializeJSON.js" % STAT,
+                                "%s/style.css" % STAT,
                                 "%s/unknown.html" % STAT,
                                 "%s/unknownError.html" % STAT])
     ]
