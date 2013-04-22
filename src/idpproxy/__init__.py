@@ -164,9 +164,9 @@ def authn_response(server_env, req_info, userid, identity,
 
 #noinspection PyUnusedLocal
 def get_eptid(server_env, req_info, identity, session):
-    args_ = [session["permanent_id"], session["authn_auth"]]
     return server_env["eptid"].get(server_env["idp"].config.entityid,
-                                   req_info.sender(), *args_)
+                                   req_info.sender(), session["permanent_id"],
+                                   session["authn_auth"])
 
 
 #noinspection PyUnusedLocal
