@@ -1,6 +1,6 @@
 import copy
 import traceback
-from oic.utils.authn import CLIENT_AUTHN_METHOD
+from oic.utils.authn.client import CLIENT_AUTHN_METHOD
 from idpproxy.social import Social
 from oic import oic
 #from oic.oic import consumer
@@ -175,7 +175,7 @@ class OpenIDConnect(Social):
         if self.srv_discovery_url:
             issuer = client.provider_info.keys()[0]
             #logger.debug("state: %s (%s)" % (client.state, msg["state"]))
-            key = client.keystore.get_verify_key(owner=issuer)
+            key = client.keyjar.get_verify_key(owner=issuer)
             kwargs = {"key": key}
             logger.debug("key: %s" % key)
         else:

@@ -267,6 +267,8 @@ if __name__ == '__main__':
         generateMetadata = MetadataGeneration(
             logger, idp_proxy_conf.SERVICE, publicKey=_key, privateKey=key,
             metadataList=[metadata])
+    else:
+        generateMetadata = None
 
     #noinspection PyUnboundLocalVariable
     _idp = setup_server_env(idp_proxy_conf, args.config, key)
