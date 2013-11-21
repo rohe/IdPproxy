@@ -26,6 +26,7 @@ from saml2.extension import idpdisc
 from saml2.extension import dri
 from saml2.extension import ui
 from saml2 import md
+from saml2.config import Config
 
 # The class is responsible for taking care of all requests for generating SP
 # metadata for the social services used by the IdPproxy.
@@ -81,20 +82,22 @@ class MetadataGeneration(object):
     #Needed for reading metadatafiles.
     CONST_ATTRCONV = attribute_converter.ac_factory("attributemaps")
 
-    def __init__(self, logger, conf, publicKey, privateKey, metadataList):
+    def __init__(self, logger, idp_conf, services, publicKey, privateKey, metadataList):
         """
         Constructor.
         Initiates the class.
         :param logger: Logger to be used when something needs to be logged.
-        :param conf: idp_proxy_conf see IdpProxy/conig/idp_proxy_conf.example.py
+        :param idp_conf: idp_conf see IdpProxy/idp_conf.example.py
+        :param services: idp_proxy_conf.SERVICES see IdpProxy/config/idp_proxy_conf.example.py
         :param key: A RSA key to be used for encryption.
         :param metadataList: A list of metadata files.
             [{"local": ["swamid-1.0.xml"]}, {"local": ["sp.xml"]}]
         :raise:
         """
-        if (logger is None) or (conf is None) or (publicKey is None)or (privateKey is None):
+        if (logger is None) or (idp_conf is None) or (services is None) or (publicKey is None) or (privateKey is None):
             raise ValueError(
-                "A new instance must include a value for logger, conf and key.")
+                "A new instance must include a value for logger, conf, services and key.")
+        self.idp_conf = Config().load(idp_conf)
         #Public key to be used for encryption.
         self.jwe_rsa = JWE_RSA()
         self.publicKey = publicKey
@@ -112,23 +115,12 @@ class MetadataGeneration(object):
         self.socialServiceKeyList = []
         #A list of all service providers used by this sp.
         self.spKeyList = []
-        for key in conf:
-            self.socialServiceKeyList.append(conf[key]["name"])
-
-        try:
-            xmlsec_path = get_xmlsec_binary(["/opt/local/bin"])
-        except:
-            try:
-                xmlsec_path = get_xmlsec_binary(["/usr/local/bin"])
-            except:
-                self.logger.info('Xmlsec must be installed! Tries /usr/bin/xmlsec1.')
-                xmlsec_path = '/usr/bin/xmlsec1'
-
-        self.xmlsec_path = xmlsec_path
+        for key in services:
+            self.socialServiceKeyList.append(services[key]["name"])
 
         for metadata in metadataList:
-            mds = MetadataStore(MetadataGeneration.CONST_ONTS.values(),
-                                MetadataGeneration.CONST_ATTRCONV, xmlsec_path,
+            mds = MetadataStore(onts=MetadataGeneration.CONST_ONTS.values(),
+                                attrc=MetadataGeneration.CONST_ATTRCONV, config=self.idp_conf,
                                 disable_ssl_certificate_validation=True)
             mds.imp(metadata)
             for entityId in mds.keys():
@@ -339,7 +331,7 @@ class MetadataGeneration(object):
                     ci = None
                     try:
                         mds = MetadataStore(MetadataGeneration.CONST_ONTS.values(),
-                                            MetadataGeneration.CONST_ATTRCONV, self.xmlsec_path,
+                                            MetadataGeneration.CONST_ATTRCONV, self.idp_conf,
                                             disable_ssl_certificate_validation=True)
                         md = MetaData(MetadataGeneration.CONST_ONTS.values(), MetadataGeneration.CONST_ATTRCONV, metadata=xml)
                         md.load()
