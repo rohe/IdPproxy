@@ -12,7 +12,7 @@ from idpproxy import utils
 from saml2.httputil import Response, NotFound
 from urlparse import parse_qs
 from mako.lookup import TemplateLookup
-from jwkest.jwe import encrypt
+from jwkest.jwe import JWE_RSA
 from saml2.extension import mdattr
 from saml2.saml import Attribute
 from saml2.saml import AttributeValue
@@ -96,6 +96,7 @@ class MetadataGeneration(object):
             raise ValueError(
                 "A new instance must include a value for logger, conf and key.")
         #Public key to be used for encryption.
+        self.jwe_rsa = JWE_RSA()
         self.publicKey = publicKey
         self.privateKey = privateKey
         #Used for presentation of mako files.
@@ -264,7 +265,7 @@ class MetadataGeneration(object):
         else:
             try:
                 secretData = '{"entityId": ' + qs["entityId"] + ', "secret":' + qs["secret"] + '}'
-                secretDataEncrypted = encrypt(
+                secretDataEncrypted = self.jwe_rsa.encrypt(
                     secretData,
                     {"rsa": [self.publicKey]},
                     MetadataGeneration.CONST_ALG,

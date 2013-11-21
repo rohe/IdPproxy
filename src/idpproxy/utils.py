@@ -3,7 +3,7 @@ __author__ = 'rohe0002'
 import os
 import json
 
-from jwkest.jwe import decrypt
+from jwkest.jwe import JWE_RSA
 
 import logging
 logger = logging.getLogger(__name__)
@@ -58,6 +58,7 @@ ATTR_NAME = "http://social2saml.nordu.net/customer"
 class MetadataInfo(Info):
     def __init__(self, dkeys, metad, **kwargs):
         Info.__init__(self)
+        self.jwe_rsa = JWE_RSA()
         self.dkeys = dkeys
         self.metad = metad
         metad.post_load_process = self
@@ -66,7 +67,7 @@ class MetadataInfo(Info):
     def __call__(self):
         res = {}
 
-        for ent,item in self.metad.items():
+        for ent, item in self.metad.items():
             if "spsso_descriptor" not in item:
                 continue
 
@@ -80,9 +81,8 @@ class MetadataInfo(Info):
                             if attr["name"] == ATTR_NAME:
                                 for val in attr["attribute_value"]:
                                     try:
-                                        socialsecrets = json.loads(decrypt(val["text"],
-                                                                           self.dkeys,
-                                                                           "private"))
+                                        socialsecrets = json.loads(self.jwe_rsa.decrypt(
+                                            token=val["text"], key=self.dkeys, context="private"))
                                         if "entityId" in socialsecrets and ent in socialsecrets["entityId"]:
                                             if "secret" in socialsecrets:
                                                 res[ent] = socialsecrets["secret"]
