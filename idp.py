@@ -265,7 +265,7 @@ if __name__ == '__main__':
     metadata = idp_conf.CONFIG["metadata"]
     if _key:
         generateMetadata = MetadataGeneration(
-            logger, idp_proxy_conf.SERVICE, publicKey=_key, privateKey=key,
+            logger, idp_conf.CONFIG, idp_proxy_conf.SERVICE, publicKey=_key, privateKey=key,
             metadataList=[metadata])
     else:
         generateMetadata = None

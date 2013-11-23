@@ -1,5 +1,5 @@
 import json
-from oic.utils.authn import CLIENT_AUTHN_METHOD
+from oic.utils.authn.client import CLIENT_AUTHN_METHOD
 
 from idpproxy.social import Social
 
