@@ -36,6 +36,7 @@ class FileInfo(Info):
         self._mtime = 0
         # initial load
         self.update()
+        self.ava = None
 
     def update(self):
         _timestamp = os.path.getmtime(self.file)
@@ -43,8 +44,7 @@ class FileInfo(Info):
             try:
                 info = open(self.file).read()
                 try:
-                    _ava = eval(info)
-                    self._ava = _ava
+                    self.ava = eval(info)
                 except Exception, err:
                     logger.error("Could not load consumer info: %s" % err)
             except Exception, err:
@@ -81,8 +81,7 @@ class MetadataInfo(Info):
                                 for val in attr["attribute_value"]:
                                     try:
                                         socialsecrets = json.loads(decrypt(val["text"],
-                                                                           self.dkeys,
-                                                                           "private"))
+                                                                           self.dkeys))
                                         if "entityId" in socialsecrets and ent in socialsecrets["entityId"]:
                                             if "secret" in socialsecrets:
                                                 res[ent] = socialsecrets["secret"]
@@ -94,17 +93,17 @@ class MetadataInfo(Info):
 
 class ConsumerInfo(object):
     def __init__(self, spec, **kwargs):
-        self._info = []
+        self.info = []
         for sp in spec:
             if sp.startswith("file:"):
-                self._info.append(FileInfo(sp[5:], **kwargs))
+                self.info.append(FileInfo(sp[5:], **kwargs))
             elif sp == "metadata":
-                self._info.append(MetadataInfo(**kwargs))
+                self.info.append(MetadataInfo(**kwargs))
 
     def __call__(self, social_service, entity_id):
         default = {}
         logger.debug("Consumer info for %s/%s" % (social_service, entity_id))
-        for src in self._info:
+        for src in self.info:
             try:
                 ix, di = src.get_consumer_key_and_secret(social_service,
                                                          entity_id)

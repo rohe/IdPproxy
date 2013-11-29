@@ -162,8 +162,7 @@ def authn_response(server_env, req_info, userid, identity,
 # -----------------------------------------------------------------------------
 
 
-#noinspection PyUnusedLocal
-def get_eptid(server_env, req_info, identity, session):
+def get_eptid(server_env, req_info, session):
     return server_env["eptid"].get(server_env["idp"].config.entityid,
                                    req_info.sender(), session["permanent_id"],
                                    session["authn_auth"])
@@ -181,7 +180,7 @@ def do_req_response(server_env, req_info, response, environ, source,
         userid = identity["uid"]
         if "eduPersonTargetedID" not in identity:
             identity["eduPersonTargetedID"] = get_eptid(server_env, req_info,
-                                                        identity, session)
+                                                        session)
     else:
         userid = "anonymous"
 

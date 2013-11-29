@@ -129,9 +129,9 @@ def application(environ, start_response):
         return idp_srv.logo(environ, start_response, SERVER_ENV)
     elif path == "/logout":
         return idp_srv.logout(environ, start_response, sid, SERVER_ENV)
-    elif generateMetadata is not None and generateMetadata.verifyHandleRequest(
+    elif generateMetadata is not None and generateMetadata.verify_handle_request(
             path):
-        return generateMetadata.handleRequest(environ, start_response, path)
+        return generateMetadata.handle_request(environ, start_response, path)
     else:
         environ['idpproxy.url_args'] = ""
         return idp_srv.auth_choice(path, environ, start_response, sid,
@@ -263,15 +263,16 @@ if __name__ == '__main__':
         _key = None
     idp_conf = import_module(args.config)
     metadata = idp_conf.CONFIG["metadata"]
-    if _key:
-        generateMetadata = MetadataGeneration(
-            logger, idp_proxy_conf.SERVICE, publicKey=_key, privateKey=key,
-            metadataList=[metadata])
-    else:
-        generateMetadata = None
 
     #noinspection PyUnboundLocalVariable
     _idp = setup_server_env(idp_proxy_conf, args.config, key)
+
+    if _key:
+        generateMetadata = MetadataGeneration(
+            logger, idp_proxy_conf.SERVICE, publicKey=_key, privateKey=key,
+            metadataList=[metadata], idp_conf=_idp.config)
+    else:
+        generateMetadata = None
 
     print SERVER_ENV["base_url"]
     SRV = wsgiserver.CherryPyWSGIServer(('0.0.0.0', SERVER_ENV["PORT"]),

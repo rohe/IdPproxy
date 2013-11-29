@@ -18,9 +18,11 @@ BASE = "/"
 AUTH_CHOICE = BASE + "AuthChoice"
 POLICY = "policy.html"
 
+
 def not_found(environ, start_response, text):
     resp = NotFound(text)
     return resp(environ, start_response)
+
 
 def match(path, service):
     """
@@ -40,6 +42,7 @@ def match(path, service):
         pp = pp[:-1]
 
     return pp[0] == service
+
 
 def local_path(path):
     # First non-'' part is the service name
@@ -102,7 +105,7 @@ def auth_choice(path, environ, start_response, sid, server_env):
 
     environ['idpproxy.url_args'] = local_path(path)
     _cache = server_env["CACHE"]
-    if func_name == "callback": # Callback from the Social service
+    if func_name == "callback":  # Callback from the Social service
         try:
             query = parse_qs(environ["QUERY_STRING"])
         except KeyError:
@@ -114,7 +117,7 @@ def auth_choice(path, environ, start_response, sid, server_env):
         except KeyError:
             exception_log()
             return bad_request(environ, start_response, "Unknown session")
-    else: # This is the SAML endpoint
+    else:  # This is the SAML endpoint
         # Should I support mote then HTTP redirect
         _dict = unpack_redirect(environ)
         if _dict is None:
@@ -129,8 +132,8 @@ def auth_choice(path, environ, start_response, sid, server_env):
             logger.debug("Query: %s" % query)
 
             try:
-                req_info = server_env["idp"].parse_authn_request(query,
-                                                                 BINDING_HTTP_REDIRECT)
+                req_info = server_env["idp"].parse_authn_request(
+                    query, BINDING_HTTP_REDIRECT)
             except KeyError:
                 exception_log()
                 return bad_request(environ, start_response,
@@ -145,8 +148,8 @@ def auth_choice(path, environ, start_response, sid, server_env):
             except KeyError:
                 pass
 
-            logger.debug("type req_info: %s message: %s" % (type(req_info),
-                                                            type(req_info.message)))
+            logger.debug("type req_info: %s message: %s" % (
+                type(req_info), type(req_info.message)))
 
             entity_id = req_info.sender()
             _cache.set(sid, {"req_info": req_info, "entity_id": entity_id})
@@ -154,9 +157,8 @@ def auth_choice(path, environ, start_response, sid, server_env):
             return not_found(environ, start_response, "No query")
 
     logger.debug("SID: %s" % sid)
-    cookie = server_env["CACHE"].create_cookie(sid,
-                                        path="/%s" % _dic["social_endpoint"],
-                                        expire=60)
+    cookie = server_env["CACHE"].create_cookie(
+        sid, path="/%s" % _dic["social_endpoint"], expire=60)
 
     logger.debug("NEW COOKIE: %s" % (cookie,))
     #logger.debug("_dic: %s" % (_dic,))
@@ -185,6 +187,7 @@ def logo(environ, start_response, serv_env):
     return resp(environ, start_response)
 
 # ----------------------------------------------------------------------------
+
 
 def logout(environ, start_response, sid, server_env):
     msg = ""

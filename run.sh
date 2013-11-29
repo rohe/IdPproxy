@@ -1,1 +1,1 @@
-./idp.py -r 'keys/idptest.key' idp_conf
+./idp.py -r 'pki/mykey.pem' idp_conf
