@@ -186,7 +186,7 @@ class MetadataGeneration(object):
                 else:
                     return self.handle_static(environ, start_response,
                                               CONST_UNKNOWFILE)
-        except Exception as e:
+        except Exception:
             self.logger.fatal('Unknown error in handle_request.', exc_info=True)
             return self.handle_static(environ, start_response,
                                       CONST_UNKNOWERROR)
@@ -280,7 +280,7 @@ class MetadataGeneration(object):
                 if len(xml_list) == 2:
                     xml = xml_list[1]
 
-            except Exception as exp:
+            except Exception:
                 self.logger.fatal('Unknown error in handle_metadata_save.',
                                   exc_info=True)
                 xml = "Xml could not be generated."

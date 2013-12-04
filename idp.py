@@ -16,7 +16,7 @@ from saml2.eptid import EptidShelve
 
 from idpproxy import cache
 
-from jwkest.jwk import rsa_pub_load, rsa_priv_to_pub
+#from jwkest.jwk import rsa_pub_load, rsa_priv_to_pub
 from importlib import import_module
 
 # ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ URLS = [
 ]
 
 SERVER_ENV = {}
-
+GENERATE_METADATA = None
 
 def application(environ, start_response):
     """
@@ -92,7 +92,7 @@ def application(environ, start_response):
     # to avoid getting duplicated entries
     _logger.propagate = False
     _logger.info("%s %s" % (environ.get("REQUEST_METHOD", ''), path))
-    
+
     kaka = environ.get("HTTP_COOKIE", '')
     logger.debug("Cookie: %s" % (kaka,))
 
@@ -129,9 +129,9 @@ def application(environ, start_response):
         return idp_srv.logo(environ, start_response, SERVER_ENV)
     elif path == "/logout":
         return idp_srv.logout(environ, start_response, sid, SERVER_ENV)
-    elif generateMetadata is not None and generateMetadata.verify_handle_request(
+    elif GENERATE_METADATA is not None and GENERATE_METADATA.verify_handle_request(
             path):
-        return generateMetadata.handle_request(environ, start_response, path)
+        return GENERATE_METADATA.handle_request(environ, start_response, path)
     else:
         environ['idpproxy.url_args'] = ""
         return idp_srv.auth_choice(path, environ, start_response, sid,
@@ -140,11 +140,9 @@ def application(environ, start_response):
 # ----------------------------------------------------------------------------
 __author__ = 'rohe0002'
 
-from jwkest.jwk import rsa_load
+from jwkest.jwk import rsa_load, import_rsa_key_from_file
 
 # ----------------------------------------------------------------------------
-
-SERVER_ENV = {}
 
 from mako.lookup import TemplateLookup
 ROOT = './'
@@ -216,7 +214,7 @@ def setup_server_env(proxy_conf, conf_mod, key):
         SERVER_ENV["CACHE"] = cache.Cache(SERVER_ENV["SERVER_NAME"],
                                           SERVER_ENV["SECRET"],
                                           filename=proxy_conf.CACHE[5:])
-    
+
     logger = setup_logger(_idp.config)
     if proxy_conf.DEBUG:
         logger.setLevel(logging.DEBUG)
@@ -227,7 +225,7 @@ def setup_server_env(proxy_conf, conf_mod, key):
 
 def usage():
     print "Usage: %s configuration_file [-p port][-d][-h]" % sys.argv[0]
-    
+
 if __name__ == '__main__':
     import sys
 
@@ -256,9 +254,9 @@ if __name__ == '__main__':
         key = None
 
     if args.rsa_file:
-        _key = rsa_priv_to_pub(args.rsa_file)
+        _key = import_rsa_key_from_file(args.rsa_file)
     elif args.rsa_public_file:
-        _key = rsa_pub_load(args.rsa_public_file)
+        _key = import_rsa_key_from_file(args.rsa_public_file)
     else:
         _key = None
     idp_conf = import_module(args.config)
@@ -268,11 +266,10 @@ if __name__ == '__main__':
     _idp = setup_server_env(idp_proxy_conf, args.config, key)
 
     if _key:
-        generateMetadata = MetadataGeneration(
-            logger, idp_proxy_conf.SERVICE, publicKey=_key, privateKey=key,
-            metadataList=[metadata], idp_conf=_idp.config)
-    else:
-        generateMetadata = None
+        GENERATE_METADATA = MetadataGeneration(
+            logger, idp_proxy_conf.SERVICE, _key,
+            metadata_list=[metadata], idp_conf=_idp.config,
+            xmlsec_path=_idp.config.xmlsec_path)
 
     print SERVER_ENV["base_url"]
     SRV = wsgiserver.CherryPyWSGIServer(('0.0.0.0', SERVER_ENV["PORT"]),

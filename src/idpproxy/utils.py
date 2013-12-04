@@ -1,9 +1,9 @@
+from jwkest.jwe import RSAEncrypter
+
 __author__ = 'rohe0002'
 
 import os
 import json
-
-from jwkest.jwe import decrypt
 
 import logging
 logger = logging.getLogger(__name__)
@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 class Info(object):
     def __init__(self):
-        self._ava = {}
+        self.ava = {}
 
     def update(self):
         return
@@ -21,28 +21,28 @@ class Info(object):
 
         self.update()
         try:
-            return 1, self._ava[entity_id][social_service]
+            return 1, self.ava[entity_id][social_service]
         except KeyError:
-            return 0, self._ava["DEFAULT"][social_service]
+            return 0, self.ava["DEFAULT"][social_service]
 
     def __call__(self):
         self.update()
 
 
 class FileInfo(Info):
-    def __init__(self, fil=file, **kwargs):
+    def __init__(self, file_name="", **kwargs):
         Info.__init__(self)
-        self.file = fil
+        self.file_name = file_name
         self._mtime = 0
+        self.ava = {}
         # initial load
         self.update()
-        self.ava = None
 
     def update(self):
-        _timestamp = os.path.getmtime(self.file)
+        _timestamp = os.path.getmtime(self.file_name)
         if self._mtime != _timestamp:
             try:
-                info = open(self.file).read()
+                info = open(self.file_name).read()
                 try:
                     self.ava = eval(info)
                 except Exception, err:
@@ -65,8 +65,8 @@ class MetadataInfo(Info):
 
     def __call__(self):
         res = {}
-
-        for ent,item in self.metad.items():
+        enc = RSAEncrypter()
+        for ent, item in self.metad.items():
             if "spsso_descriptor" not in item:
                 continue
 
@@ -80,15 +80,20 @@ class MetadataInfo(Info):
                             if attr["name"] == ATTR_NAME:
                                 for val in attr["attribute_value"]:
                                     try:
-                                        socialsecrets = json.loads(decrypt(val["text"],
-                                                                           self.dkeys))
-                                        if "entityId" in socialsecrets and ent in socialsecrets["entityId"]:
-                                            if "secret" in socialsecrets:
-                                                res[ent] = socialsecrets["secret"]
-                                    except Exception as exp:
+                                        socialsecrets = json.loads(
+                                            enc.decrypt(val["text"],
+                                                        self.dkeys))
+                                        try:
+                                            if ent in socialsecrets["entityId"]:
+                                                if "secret" in socialsecrets:
+                                                    res[ent] = socialsecrets[
+                                                        "secret"]
+                                        except KeyError:
+                                            pass
+                                    except Exception:
                                         logger.warning('The secrets in the metadata cannot med used for the sp: ' + ent,
                                                        exc_info=True)
-        self._ava.update(res)
+        self.ava.update(res)
 
 
 class ConsumerInfo(object):
@@ -111,7 +116,7 @@ class ConsumerInfo(object):
                     return di["key"], di["secret"]
                 elif not default:
                     default = di
-            except KeyError:
+            except KeyError, err:
                 pass
 
         if default:

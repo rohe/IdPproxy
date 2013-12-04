@@ -188,8 +188,9 @@ def do_req_response(server_env, req_info, response, environ, source,
 
     session["identity"] = identity
     session["eptid"] = identity["eduPersonTargetedID"]
+    _authn_info = {"class_ref": saml.AUTHN_PASSWORD, "authn_auth": source}
     return authn_response(server_env, req_info, userid, identity,
-                          authn=(saml.AUTHN_PASSWORD, source), service=service)
+                          authn=_authn_info, service=service)
 
 
 def do_logout_response(req_info, status=None):
@@ -245,7 +246,7 @@ def return_active_info(environ, start_response, server_env, state):
     try:
         _eptid = session["eptid"]
     except KeyError:
-        _eptid = get_eptid(server_env, req_info, identity, session)
+        _eptid = get_eptid(server_env, req_info, session)
         session["eptid"] = _eptid
 
     identity["eduPersonTargetedID"] = _eptid
