@@ -122,8 +122,17 @@ class Cache(object):
         if not value: return None
         parts = value.split("|")
         if len(parts) != 3: return None
-        # verify the cookie signature
-        if self.cookie_signature(parts[0], parts[1]) != parts[2]:
+        # Verify the cookie signature in a constant time manner to prevent
+        # attackers from guessing the correct signature value (code snippet
+        # borrowed from http://rdist.root.org/2009/05/28/ \
+        #                   timing-attack-in-google-keyczar-library/ ).
+        correctMac = self.cookie_signature(parts[0], parts[1])
+        if len(correctMac) != len(parts[2]):
+            raise Exception("Invalid cookie signature %r", value)
+        result = 0
+        for x, y in zip(correctMac, parts[2]):
+            result |= ord(x) ^ ord(y)
+        if result:
             raise Exception("Invalid cookie signature %r", value)
 
         try:

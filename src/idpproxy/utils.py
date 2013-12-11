@@ -5,6 +5,8 @@ __author__ = 'rohe0002'
 import os
 import json
 
+from jwkest.jwe import JWE_RSA
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -58,6 +60,7 @@ ATTR_NAME = "http://social2saml.nordu.net/customer"
 class MetadataInfo(Info):
     def __init__(self, dkeys, metad, **kwargs):
         Info.__init__(self)
+        self.jwe_rsa = JWE_RSA()
         self.dkeys = dkeys
         self.metad = metad
         metad.post_load_process = self
@@ -66,6 +69,7 @@ class MetadataInfo(Info):
     def __call__(self):
         res = {}
         enc = RSAEncrypter()
+
         for ent, item in self.metad.items():
             if "spsso_descriptor" not in item:
                 continue

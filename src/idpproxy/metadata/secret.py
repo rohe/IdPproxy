@@ -12,7 +12,7 @@ from urlparse import parse_qs
 from mako.lookup import TemplateLookup
 from jwkest.jwe import RSAEncrypter
 from saml2.extension import mdattr
-from saml2.saml import Attribute
+from saml2.saml import Attribute, NAME_FORMAT_URI
 from saml2.saml import AttributeValue
 from saml2.mdstore import MetadataStore
 from saml2.mdstore import MetaData
@@ -82,10 +82,12 @@ class MetadataGeneration(object):
         Constructor.
         Initiates the class.
         :param logger: Logger to be used when something needs to be logged.
-        :param conf: idp_proxy_conf see IdpProxy/conig/idp_proxy_conf.example.py
+        :param conf: Specific metadata conf
         :param key: A RSA key to be used for encryption.
         :param metadata_list: A list of metadata files.
             like this: [{"local": ["swamid-1.0.xml"]}, {"local": ["sp.xml"]}]
+        :param idp_conf: idp_conf see IdpProxy/idp_conf.example.py
+        :param xmlsec_path:
         :raise:
         """
         if (logger is None) or (conf is None) or (key is None):
@@ -171,8 +173,7 @@ class MetadataGeneration(object):
             if path == CONST_METADATA:
                 return self.handle_metadata(environ, start_response)
             elif path == CONST_METADATAVERIFY:
-                return self.handle_metadata_verify(environ, start_response,
-                                                   self.get_query_dict(environ))
+                return self.handle_metadata_verify(environ, start_response)
             elif path == CONST_METADATAVERIFYJSON:
                 return self.handle_metadata_verify_json(
                     environ, start_response, self.get_query_dict(environ))
@@ -266,7 +267,7 @@ class MetadataGeneration(object):
                 val = AttributeValue()
                 val.set_text(secret_data_encrypted)
                 attr = Attribute(
-                    name_format="urn:oasis:names:tc:SAML:2.0:attrname-format:uri",
+                    name_format=NAME_FORMAT_URI,
                     name="http://social2saml.nordu.net/customer",
                     attribute_value=[val])
                 eattr = mdattr.EntityAttributes(attribute=[attr])
@@ -291,12 +292,11 @@ class MetadataGeneration(object):
         }
         return resp(environ, start_response, **argv)
 
-    def handle_metadata_verify(self, environ, start_response, qs):
+    def handle_metadata_verify(self, environ, start_response):
         """
         Will show the page for metadata verification (metadataverify.mako).
         :param environ: wsgi enviroment
         :param start_response: wsgi start respons
-        :param qs: Query parameters in a dictionary.
         :return: wsgi response for the mako file metadatasave.mako.
         """
         resp = Response(mako_template="metadataverify.mako",
