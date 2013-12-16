@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import os
 import argparse
 from saml2.extension import shibmd
 
@@ -98,12 +99,15 @@ if __name__ == "__main__":
         kwargs["scopebase"] = args.scopebase
 
     if args.individual:
+        if not os.path.isdir(args.target):
+            os.mkdir(args.target)
+
         for name, desc in ipc.SERVICE.items():
             kwargs["social"] = [name]
             ed = entities_desc(ipc.SERVICE, "%s/md/idpproxy-1.0.xml" % _base,
                                _base, cert_file=cnf.CONFIG["cert_file"],
                                validity=args.validity, **kwargs)
-            f = open("%s/%s.xml" % (args.target,name), "w")
+            f = open("%s/%s.xml" % (args.target, name), "w")
             f.write("%s" % ed)
             f.close()
     else:
