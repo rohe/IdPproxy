@@ -62,7 +62,8 @@ class Social(object):
 
         except Exception, exc:
             exception_log()
-            return err_response(server_env, req_info, exc)
+            resp = err_response(server_env, req_info, exc)
+            return resp(environ, start_response)
 
         logger.debug("Session: %s" % session)
         # redirect back to the SP
