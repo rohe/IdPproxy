@@ -334,24 +334,26 @@ class MetadataGeneration(object):
                     xml = xml.strip()
                     metadata_ok = False
                     ci = None
-                    try:
-                        mds = MetadataStore(
-                            CONST_ONTS.values(), CONST_ATTRCONV,
-                            self.xmlsec_path,
-                            disable_ssl_certificate_validation=True)
+                    mds = MetadataStore(
+                        CONST_ONTS.values(), CONST_ATTRCONV,
+                        self.xmlsec_path,
+                        disable_ssl_certificate_validation=True)
 
-                        _md = MetaData(CONST_ONTS.values(), CONST_ATTRCONV,
-                                      metadata=xml)
+                    _md = MetaData(CONST_ONTS.values(), CONST_ATTRCONV,
+                                  metadata=xml)
+                    try:
                         _md.load()
+                    except:
+                        self.logger.info(
+                            'Could not parse the metadata file in handleMetadataVerifyJSON.',
+                            exc_info=True)
+                    else:
                         entity_id = _md.entity.keys()[0]
                         mds.metadata[entity_id] = _md
                         args = {"metad": mds, "dkeys": {"rsa": [self.key]}}
                         ci = utils.ConsumerInfo(['metadata'], **args)
                         metadata_ok = True
-                    except:
-                        self.logger.info(
-                            'Could not parse the metadata file in handleMetadataVerifyJSON.',
-                            exc_info=True)
+
                     services = "["
                     first = True
                     if ci is not None:
