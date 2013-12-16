@@ -16,7 +16,6 @@ from saml2.eptid import EptidShelve
 
 from idpproxy import cache
 
-#from jwkest.jwk import rsa_pub_load, rsa_priv_to_pub
 from importlib import import_module
 
 # ----------------------------------------------------------------------------
@@ -56,6 +55,7 @@ URLS = [
 
 SERVER_ENV = {}
 GENERATE_METADATA = None
+
 
 def application(environ, start_response):
     """
