@@ -150,7 +150,6 @@ class MetadataGeneration(object):
         else:
             qs = dict((k, v if len(v) > 1 else v[0]) for k, v in
                       parse_qs(query).iteritems())
-
         return qs
 
     def handle_request(self, environ, start_response, path):
@@ -254,8 +253,8 @@ class MetadataGeneration(object):
             _logger.warning(xml)
         else:
             try:
-                secret_data = json.dumps({"entityId": qs["entityId"],
-                                          "secret": qs["secret"]})
+                secret_data = json.dumps({"entityId": json.loads(qs["entityId"]),
+                                          "secret": json.loads(qs["secret"])})
 
                 # create a JWE
                 jwe = JWE(secret_data, alg=self.alg, enc=self.enc)
