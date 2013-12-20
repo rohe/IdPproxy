@@ -1,12 +1,9 @@
-from jwkest.jwe import RSAEncrypter
-from idpproxy.metadata.secret import CONST_PADDING
-
 __author__ = 'rohe0002'
 
 import os
 import json
 
-from jwkest.jwe import JWE_RSA
+from jwkest.jwe import JWE
 
 import logging
 logger = logging.getLogger(__name__)
@@ -61,17 +58,39 @@ ATTR_NAME = "http://social2saml.nordu.net/customer"
 class MetadataInfo(Info):
     def __init__(self, dkeys, metad, **kwargs):
         Info.__init__(self)
-        self.jwe_rsa = JWE_RSA()
         self.dkeys = dkeys
         self.metad = metad
         metad.post_load_process = self
         self.__call__()
 
+    def decrypt_client_secrets(self, jwe, val, entity_id):
+        """
+        Decrypts client information kept in the metadata.
+
+        :param jwe: A JWE instance
+        :param val: The attribute_value part of a parsed XML
+        :param entity_id: Which Entity ID this entity descriptor belongs to
+        :return: The social secret
+        """
+        try:
+            _msg = jwe.decrypt(val["text"], self.dkeys)
+            socialsecrets = json.loads(_msg)
+            try:
+                if entity_id in socialsecrets["entityId"]:  # Check the EntityID
+                    if "secret" in socialsecrets:
+                        return socialsecrets["secret"]
+            except KeyError:
+                pass
+        except Exception, err:
+            logger.warning(
+                'The secrets in the metadata cannot be used for the sp: %s' % (
+                    entity_id), exc_info=True)
+
     def __call__(self):
         res = {}
         jwe = JWE()
 
-        for ent, item in self.metad.items():
+        for entid, item in self.metad.items():
             if "spsso_descriptor" not in item:
                 continue
 
@@ -84,20 +103,8 @@ class MetadataInfo(Info):
                         for attr in elem["attribute"]:
                             if attr["name"] == ATTR_NAME:
                                 for val in attr["attribute_value"]:
-                                    try:
-                                        socialsecrets = json.loads(
-                                            jwe.decrypt(val["text"],
-                                                        self.dkeys))
-                                        try:
-                                            if ent in socialsecrets["entityId"]:
-                                                if "secret" in socialsecrets:
-                                                    res[ent] = socialsecrets[
-                                                        "secret"]
-                                        except KeyError:
-                                            pass
-                                    except Exception:
-                                        logger.warning('The secrets in the metadata cannot med used for the sp: ' + ent,
-                                                       exc_info=True)
+                                    res[entid] = self.decrypt_client_secrets(
+                                        jwe, val, entid)
         self.ava.update(res)
 
 

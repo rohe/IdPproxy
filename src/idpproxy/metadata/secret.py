@@ -1,34 +1,37 @@
 import cgi
 import re
 import os
-from jwkest.jwk import RSAKey
 import xmldsig
 import xmlenc
 import logging
 import uuid
 import json
-from idpproxy import utils
-from saml2.httputil import Response, NotFound
 from urlparse import parse_qs
+from idpproxy import utils
 from mako.lookup import TemplateLookup
-from jwkest.jwe import RSAEncrypter, JWE
-from saml2.extension import mdattr
-from saml2.saml import Attribute, NAME_FORMAT_URI
-from saml2.saml import AttributeValue
-from saml2.mdstore import MetadataStore
-from saml2.mdstore import MetaData
+from jwkest.jwe import JWE
+from jwkest.jwk import RSAKey
+
 from saml2 import attribute_converter
+from saml2 import md
 from saml2 import saml
+from saml2.extension import mdattr
 from saml2.extension import mdui
 from saml2.extension import idpdisc
 from saml2.extension import dri
 from saml2.extension import ui
-from saml2 import md
+from saml2.httputil import Response
+from saml2.httputil import NotFound
+from saml2.mdstore import MetadataStore
+from saml2.mdstore import MetaData
+from saml2.saml import Attribute
+from saml2.saml import AttributeValue
+from saml2.saml import NAME_FORMAT_URI
 
 # The class is responsible for taking care of all requests for generating SP
 # metadata for the social services used by the IdPproxy.
 
-_log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 #Body
 CONST_BODY = "body"+uuid.uuid4().urn
@@ -57,9 +60,6 @@ CONST_UNKNOWFILE = CONST_STATIC_FILE + "unknown.html"
 #Static hthml file that is presented to the user if an unknown error occurs.
 CONST_UNKNOWERROR = CONST_STATIC_FILE + "unknownError.html"
 
-#Padding used for the PKCS1 encryption
-CONST_PADDING = "pkcs1_oaep_padding"
-
 #Needed for reading metadatafiles.
 CONST_ONTS = {
     saml.NAMESPACE: saml,
@@ -78,25 +78,22 @@ CONST_ATTRCONV = attribute_converter.ac_factory("attributemaps")
 
 class MetadataGeneration(object):
 
-    def __init__(self, logger, conf, key, metadata_list, idp_conf, xmlsec_path):
+    def __init__(self, conf, key, idp_conf, xmlsec_path):
         """
         Constructor.
         Initiates the class.
-        :param logger: Logger to be used when something needs to be logged.
         :param conf: Specific metadata conf
         :param key: A RSA key to be used for encryption.
-        :param metadata_list: A list of metadata files.
-            like this: [{"local": ["swamid-1.0.xml"]}, {"local": ["sp.xml"]}]
         :param idp_conf: idp_conf see IdpProxy/idp_conf.example.py
         :param xmlsec_path:
         :raise:
         """
-        if (logger is None) or (conf is None) or (key is None):
+        if (conf is None) or (key is None):
             raise ValueError(
                 "A new instance must include a value for logger, conf and key.")
 
         #Key to be used for encryption.
-        self.key = RSAKey(key)
+        self.key = RSAKey(key=key)
         self.key.serialize()
         self.alg = 'RSA-OAEP'
         self.enc = 'A128CBC-HS256'
@@ -108,22 +105,14 @@ class MetadataGeneration(object):
             module_directory='modules',
             input_encoding='utf-8',
             output_encoding='utf-8')
-        #The logger.
-        self.logger = logger
+
         #A list of all social services used by this IdPproxy.
         self.social_service_key_list = []
-        #A list of all service providers used by this sp.
-        self.sp_key_list = []
         for key in conf:
             self.social_service_key_list.append(conf[key]["name"])
 
-        for metadata in metadata_list:
-            mds = MetadataStore(CONST_ONTS.values(),
-                                CONST_ATTRCONV, idp_conf,
-                                disable_ssl_certificate_validation=True)
-            mds.imp(metadata)
-            for entityId in mds.keys():
-                self.sp_key_list.append(entityId)
+        #A list of all service providers used by this sp.
+        self.sp_key_list = idp_conf.metadata.service_providers()
 
         self.xmlsec_path = xmlsec_path
 
@@ -167,7 +156,7 @@ class MetadataGeneration(object):
     def handle_request(self, environ, start_response, path):
         """
         Call this method from the wsgi application.
-        Handles the request if the path i matched by verify_handle_request
+        Handles the request if the path matched by verify_handle_request
         and any static file or CONST_METADATA or CONST_METADATASAVE.
 
         :param environ: wsgi enviroment
@@ -194,7 +183,7 @@ class MetadataGeneration(object):
                     return self.handle_static(environ, start_response,
                                               CONST_UNKNOWFILE)
         except Exception:
-            self.logger.fatal('Unknown error in handle_request.', exc_info=True)
+            _logger.fatal('Unknown error in handle_request.', exc_info=True)
             return self.handle_static(environ, start_response,
                                       CONST_UNKNOWERROR)
 
@@ -262,11 +251,11 @@ class MetadataGeneration(object):
         if "entityId" not in qs or "secret" not in qs:
             xml = ("Xml could not be generated because no entityId or secret"
                    "has been sent to the service.")
-            self.logger.warning(xml)
+            _logger.warning(xml)
         else:
             try:
-                secret_data = '{"entityId": %s, "secret": %s}' % (
-                    qs["entityId"], qs["secret"])
+                secret_data = json.dumps({"entityId": qs["entityId"],
+                                          "secret": qs["secret"]})
 
                 # create a JWE
                 jwe = JWE(secret_data, alg=self.alg, enc=self.enc)
@@ -281,7 +270,7 @@ class MetadataGeneration(object):
                 eattr = mdattr.EntityAttributes(attribute=[attr])
                 nspair = {
                     "mdattr": "urn:oasis:names:tc:SAML:metadata:attribute",
-                    "samla": "urn:oasis:names:tc:SAML:2.0:assertion"
+                    "samla": "urn:oasis:names:tc:SAML:2.0:assertion",
                 }
                 xml = eattr.to_string(nspair)
                 xml_list = xml.split("\n", 1)
@@ -290,7 +279,7 @@ class MetadataGeneration(object):
                     xml = xml_list[1]
 
             except Exception:
-                self.logger.fatal('Unknown error in handle_metadata_save.',
+                _logger.fatal('Unknown error in handle_metadata_save.',
                                   exc_info=True)
                 xml = "Xml could not be generated."
         argv = {
@@ -352,13 +341,13 @@ class MetadataGeneration(object):
                     try:
                         _md.load()
                     except:
-                        self.logger.info(
+                        _logger.info(
                             'Could not parse the metadata file in handleMetadataVerifyJSON.',
                             exc_info=True)
                     else:
                         entity_id = _md.entity.keys()[0]
                         mds.metadata[entity_id] = _md
-                        args = {"metad": mds, "dkeys": {"rsa": [self.key]}}
+                        args = {"metad": mds, "dkeys": [self.key]}
                         ci = utils.ConsumerInfo(['metadata'], **args)
                         metadata_ok = True
 
@@ -377,7 +366,7 @@ class MetadataGeneration(object):
                     if metadata_ok:
                         ok = True
         except:
-            self.logger.fatal('Unknown error in handleMetadataVerifyJSON.',
+            _logger.fatal('Unknown error in handleMetadataVerifyJSON.',
                               exc_info=True)
         resp = Response('{"ok":"' + str(ok) + '", "services":' + services + '}',
                         headers=[('Content-Type', CONST_TYPEJSON)])
