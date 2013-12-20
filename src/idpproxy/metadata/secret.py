@@ -1,6 +1,7 @@
 import cgi
 import re
 import os
+from jwkest.jwk import RSAKey
 import xmldsig
 import xmlenc
 import logging
@@ -10,7 +11,7 @@ from idpproxy import utils
 from saml2.httputil import Response, NotFound
 from urlparse import parse_qs
 from mako.lookup import TemplateLookup
-from jwkest.jwe import RSAEncrypter
+from jwkest.jwe import RSAEncrypter, JWE
 from saml2.extension import mdattr
 from saml2.saml import Attribute, NAME_FORMAT_URI
 from saml2.saml import AttributeValue
@@ -93,8 +94,13 @@ class MetadataGeneration(object):
         if (logger is None) or (conf is None) or (key is None):
             raise ValueError(
                 "A new instance must include a value for logger, conf and key.")
+
         #Key to be used for encryption.
-        self.key = key
+        self.key = RSAKey(key)
+        self.key.serialize()
+        self.alg = 'RSA-OAEP'
+        self.enc = 'A128CBC-HS256'
+
         #Used for presentation of mako files.
         self.lookup = TemplateLookup(
             directories=[CONST_STATIC_MAKO + 'templates',
@@ -261,9 +267,11 @@ class MetadataGeneration(object):
             try:
                 secret_data = '{"entityId": %s, "secret": %s}' % (
                     qs["entityId"], qs["secret"])
-                encrypter = RSAEncrypter()
-                secret_data_encrypted = encrypter.encrypt(secret_data, self.key,
-                                                          CONST_PADDING)
+
+                # create a JWE
+                jwe = JWE(secret_data, alg=self.alg, enc=self.enc)
+                secret_data_encrypted = jwe.encrypt([self.key])
+
                 val = AttributeValue()
                 val.set_text(secret_data_encrypted)
                 attr = Attribute(

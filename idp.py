@@ -140,7 +140,7 @@ def application(environ, start_response):
 # ----------------------------------------------------------------------------
 __author__ = 'rohe0002'
 
-from jwkest.jwk import rsa_load, import_rsa_key_from_file
+from jwkest.jwk import rsa_load, import_rsa_key_from_file, RSAKey
 
 # ----------------------------------------------------------------------------
 
@@ -152,6 +152,13 @@ LOOKUP = TemplateLookup(directories=[ROOT + 'templates', ROOT + 'htdocs'],
 
 
 def setup_server_env(proxy_conf, conf_mod, key):
+    """
+
+    :param proxy_conf:
+    :param conf_mod:
+    :param key: RSA key
+    :return:
+    """
     global SERVER_ENV
     global logger
     #noinspection PyUnboundLocalVariable
@@ -164,7 +171,9 @@ def setup_server_env(proxy_conf, conf_mod, key):
 
     _idp = server.Server(conf_mod)
 
-    args = {"metad": _idp.metadata, "dkeys": {"rsa": [key]}}
+    rsa_key = RSAKey(key=key)
+    rsa_key.serialize()
+    args = {"metad": _idp.metadata, "dkeys": [rsa_key]}
 
     SERVER_ENV["consumer_info"] = utils.ConsumerInfo(proxy_conf.CONSUMER_INFO,
                                                      **args)

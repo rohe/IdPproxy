@@ -1,4 +1,5 @@
 from jwkest.jwe import RSAEncrypter
+from idpproxy.metadata.secret import CONST_PADDING
 
 __author__ = 'rohe0002'
 
@@ -68,7 +69,7 @@ class MetadataInfo(Info):
 
     def __call__(self):
         res = {}
-        enc = RSAEncrypter()
+        jwe = JWE()
 
         for ent, item in self.metad.items():
             if "spsso_descriptor" not in item:
@@ -85,7 +86,7 @@ class MetadataInfo(Info):
                                 for val in attr["attribute_value"]:
                                     try:
                                         socialsecrets = json.loads(
-                                            enc.decrypt(val["text"],
+                                            jwe.decrypt(val["text"],
                                                         self.dkeys))
                                         try:
                                             if ent in socialsecrets["entityId"]:
