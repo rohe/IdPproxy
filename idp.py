@@ -16,8 +16,6 @@ from saml2.eptid import EptidShelve
 
 from idpproxy import cache
 
-from importlib import import_module
-
 # ----------------------------------------------------------------------------
 from saml2.config import LOG_LEVEL
 
@@ -171,8 +169,12 @@ def setup_server_env(proxy_conf, conf_mod, key):
 
     _idp = server.Server(conf_mod)
 
-    rsa_key = RSAKey(key=key)
-    rsa_key.serialize()
+    if key:
+        rsa_key = RSAKey(key=key)
+        rsa_key.serialize()
+    else:
+        rsa_key = None
+
     args = {"metad": _idp.metadata, "dkeys": [rsa_key]}
 
     SERVER_ENV["consumer_info"] = utils.ConsumerInfo(proxy_conf.CONSUMER_INFO,
@@ -268,17 +270,14 @@ if __name__ == '__main__':
         _key = import_rsa_key_from_file(args.rsa_public_file)
     else:
         _key = None
-    idp_conf = import_module(args.config)
-    metadata = idp_conf.CONFIG["metadata"]
 
     #noinspection PyUnboundLocalVariable
     _idp = setup_server_env(idp_proxy_conf, args.config, key)
 
     if _key:
         GENERATE_METADATA = MetadataGeneration(
-            logger, idp_proxy_conf.SERVICE, _key,
-            metadata_list=[metadata], idp_conf=_idp.config,
-            xmlsec_path=_idp.config.xmlsec_path)
+            idp_proxy_conf.SERVICE, _key,
+            idp_conf=_idp.config, xmlsec_path=_idp.config.xmlsec_path)
 
     print SERVER_ENV["base_url"]
     SRV = wsgiserver.CherryPyWSGIServer(('0.0.0.0', SERVER_ENV["PORT"]),
