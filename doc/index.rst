@@ -17,6 +17,7 @@ Contents:
    install
    config
    secrets
+   idpproxy
 
 Indices and tables
 ==================
