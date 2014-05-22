@@ -19,6 +19,11 @@ Contents:
    secrets
    idpproxy
 
+.. toctree::
+   :maxdepth: 1
+
+   contents
+
 Indices and tables
 ==================
 
