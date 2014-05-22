@@ -3,8 +3,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to IdPproxy's documentation!
-====================================
+IdPproxy
+========
 
 :Release: |release|
 :Date: |today|
@@ -19,6 +19,11 @@ Contents:
    secrets
    idpproxy
 
+.. toctree::
+   :maxdepth: 1
+
+   contents
+
 Indices and tables
 ==================
 
@@ -26,3 +31,8 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
+.. raw:: html
+
+    <a href="https://github.com/rohe/IdPproxy" class="github" target="_blank">
+        <img style="position: absolute; top: 0; right: 0; border: 0;" src="_static/ViewmeonGitHub.png" alt="View me on GitHub"  class="github"/>
+    </a>
